@@ -87,7 +87,7 @@ function formatTimeForDisplay(ms, showLabels = true) {
         if (!showLabels) return seconds.toString();
         
         if (seconds === 1) return `1 ${t('duration.second')}`;
-        if (seconds < 5) return `${seconds} ${t('duration.seconds_2_4')}`;
+        if (seconds >= 2 && seconds <= 4) return `${seconds} ${t('duration.seconds_2_4')}`;
         return `${seconds} ${t('duration.seconds')}`;
     }
     
@@ -95,7 +95,7 @@ function formatTimeForDisplay(ms, showLabels = true) {
     if (!showLabels) return time;
     
     if (minutes === 1) return `${time} ${t('duration.minute')}`;
-    if (minutes < 5) return `${time} ${t('duration.minutes_2_4')}`;
+    if (minutes >= 2 && minutes <= 4) return `${time} ${t('duration.minutes_2_4')}`;
     return `${time} ${t('duration.minutes')}`;
 }
 
