@@ -95,7 +95,6 @@ h1 i {
     display: flex;
     gap: 0.8rem;
     width: 100%;
-    max-width: 280px;
     margin: 0 auto;
     padding-bottom: env(safe-area-inset-bottom);
 }
@@ -153,7 +152,7 @@ button {
 }
 
 .nav-button.active {
-    color: #0a84ff;
+    color: #0027ff;
     background: #2c2c2e;
 }
 
@@ -165,12 +164,12 @@ button {
 }
 
 /* Task-specific colors - len pre tlačidlá */
-button.breastfeeding { background: #ff9f0a !important; color: #000000 !important; }
-button.bottlefeeding { background: #5e5ce6 !important; color: #ffffff !important; }
+button.breastfeeding { background: #5e5ce6 !important; color: #ffffff !important; }
+button.bottlefeeding { background: #00d8ff !important; color: #000000 !important; }
 button.putting-to-sleep { background: #30d158 !important; color: #000000 !important; }
 button.nappy-pee { background: #FFD700 !important; color: #000000 !important; }  /* medium yellow */
 button.nappy-poop { background: #8B4513 !important; color: #ffffff !important; }  /* glossy brown */
-button.soothing { background: #30d158 !important; color: #000000 !important; }
+button.soothing { background: #0027ff !important; color: #ffffff !important; }
 
 .timeline {
     position: relative;
@@ -199,11 +198,11 @@ button.soothing { background: #30d158 !important; color: #000000 !important; }
 }
 
 .timeline-dot.breastfeeding { 
-    background: #ff9f0a;
+    background: #5e5ce6;
 }
 
 .timeline-dot.bottlefeeding { 
-    background: #5e5ce6;
+    background: #00d8ff;
 }
 
 .timeline-dot.putting-to-sleep { 
@@ -219,7 +218,7 @@ button.soothing { background: #30d158 !important; color: #000000 !important; }
 }
 
 .timeline-dot.soothing { 
-    background: #30d158;
+    background: #0027ff;
 }
 
 .timeline-info {
@@ -369,4 +368,35 @@ button.soothing { background: #30d158 !important; color: #000000 !important; }
 .nav-button.disabled {
     opacity: 0.5;
     pointer-events: none;
+}
+
+/* Bottom bar - aktívne tlačidlá podľa typu */
+.nav-button.active[onclick*="breastfeeding"] {
+    color: #ffffff;
+    background: #5e5ce6;
+}
+
+.nav-button.active[onclick*="bottlefeeding"] {
+    color: #000000;
+    background: #00d8ff;
+}
+
+.nav-button.active[onclick*="soothing"] {
+    color: #ffffff;
+    background: #0027ff;
+}
+
+.nav-button.active[onclick*="nappy"] {
+    color: #000000;
+    background: #FFD700;
+}
+
+.nav-button.active[onclick*="statistics"] {
+    color: #000000;
+    background: #ffffff;
+}
+
+/* Odstránim pôvodné pravidlo */
+.nav-button.active {
+    /* background: #2c2c2e; - už nepotrebujeme */
 }
