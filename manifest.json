@@ -1,7 +1,8 @@
 {
     "name": "Baby Care Tracker",
-    "short_name": "BabyCare",
-    "description": "Track your baby's daily activities",
+    "short_name": "Baby Care",
+    "version": "2.0.0",
+    "description": "Track baby's daily activities with real-time synchronization",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#1c1c1e",

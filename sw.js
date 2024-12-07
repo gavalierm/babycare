@@ -1,5 +1,5 @@
-const APP_VERSION = '1.0.0';
-const CACHE_NAME = `baby-care-tracker-${APP_VERSION}`;
+const CACHE_NAME = 'baby-care-v2';
+const CACHE_VERSION = '2.0.0';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
