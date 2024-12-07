@@ -1,79 +1,66 @@
 # Baby Care Tracker
 
-A Progressive Web App for tracking baby's daily activities with SQLite database storage.
+A Progressive Web App for tracking baby's daily activities with real-time synchronization across devices.
 
-## Features
+## Core Features
 
-- Track multiple activities:
+- Activity Tracking:
   - Breast Feeding (Purple)
   - Bottle Feeding (Light Blue)
   - Soothing (Blue)
   - Nappy Changes (Yellow/Brown)
-- Real-time timer with pause functionality
-- Recent activities display (last 6 entries per activity)
-- Daily log with relative dates (Today/Yesterday)
-- SQLite database storage via PHP API
-- Network-only service worker strategy
-- Installable as PWA
-- Color-coded activities and navigation
+- Timer Functions:
+  - Real-time countdown with pause
+  - Multi-device synchronization (5s interval)
+  - Automatic state recovery
+  - Accurate time calculations
+- History & Logs:
+  - Last 6 entries per activity
+  - Daily timeline with relative dates
+  - Duration and pause time tracking
+  - Color-coded interface
 
-## Technical Details
+## Technical Stack
 
 - Frontend:
-  - Pure JavaScript, HTML, and CSS
+  - HTML5, CSS3, Pure JavaScript
   - Font Awesome icons
-  - Responsive design for mobile devices
   - iOS safe area support
+  - PWA with offline capabilities
+  - Service Worker with version control
 
 - Backend:
-  - PHP 8.4 API
-  - SQLite3 database
-  - JSON communication
-  - Error handling and validation
+  - PHP 8.4 with SQLite3
+  - RESTful JSON API
+  - Secure database access
+  - CORS enabled endpoints
 
-- PWA Features:
-  - Service Worker for network-only strategy
-  - Manifest for installation
-  - Version-based cache management
+## API Endpoints
+
+- Activities:
+  - `GET api.php?type={type}` - Recent entries
+  - `GET api.php` - 30-day history
+  - `POST api.php` - Save activity
+
+- Timer Sync:
+  - `GET api.php?action=active-timer` - Get state
+  - `POST api.php?action=active-timer` - Update state
 
 ## Installation
 
-1. Clone the repository
-2. Set up a PHP 8.4+ web server
-3. Ensure SQLite3 PHP extension is enabled
-4. Deploy files to web server
-5. Set proper permissions for SQLite database directory
-6. Access through a browser
-7. Can be installed as PWA through browser's install option
+1. Clone repository
+2. Configure PHP 8.4+ server with SQLite3
+3. Set database permissions
+4. Deploy files
+5. Access via browser or install as PWA
 
-## File Structure
+## Project Structure
 
 - `index.html` - Main application structure
 - `style.css` - All styling and animations
-- `script.js` - Frontend application logic
-- `api.php` - Backend API for data handling
+- `script.js` - Frontend application logic and synchronization
+- `api.php` - Backend API for data handling and timer state
 - `manifest.json` - PWA configuration
 - `sw.js` - Service Worker with version control
 - `.htaccess` - Server security configuration
 - `icons/` - Application icons for PWA
-
-## API Endpoints
-
-- `GET api.php?type={activity_type}` - Get last 6 entries for specific activity
-- `GET api.php` - Get all activities from last 30 days
-- `POST api.php` - Save new activity
-
-## Security
-
-- Database file has random hash name
-- Direct database access blocked via .htaccess
-- API error handling and validation
-- CORS headers for API access
-
-## Data Storage
-
-All data is stored in SQLite database with:
-- Activity type tracking
-- Timestamps for all events
-- Duration tracking for timed activities
-- Automatic database initialization
