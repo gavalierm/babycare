@@ -1,0 +1,21 @@
+{
+    "name": "Baby Care Tracker",
+    "short_name": "BabyCare",
+    "description": "Track your baby's daily activities",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1c1c1e",
+    "theme_color": "#1c1c1e",
+    "icons": [
+        {
+            "src": "icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+} 
