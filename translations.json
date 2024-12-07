@@ -1,0 +1,53 @@
+{
+    "sk": {
+        "app_title": "Starostlivosť o bábätko",
+        "app_short_name": "Bábätko",
+        "nav": {
+            "breastfeeding": "Dojčenie",
+            "bottlefeeding": "Fľaška",
+            "sleep": "Spánok",
+            "nappy": "Plienka"
+        },
+        "controls": {
+            "begin": "Začať",
+            "end": "Ukončiť",
+            "pause": "Pauza",
+            "resume": "Pokračovať"
+        },
+        "time": {
+            "today": "Dnes",
+            "yesterday": "Včera",
+            "just_now": "práve teraz",
+            "time": "čas"
+        },
+        "duration": {
+            "minute": "minúta",
+            "minutes": "minút",
+            "minutes_2_4": "minúty",
+            "hour": "hodina",
+            "hours": "hodín",
+            "hours_2_4": "hodiny",
+            "second": "sekunda",
+            "seconds": "sekúnd",
+            "seconds_2_4": "sekundy"
+        },
+        "relative_time": {
+            "minute": "minútou",
+            "minutes": "minútami",
+            "minutes_2_4": "minútami",
+            "hour": "hodinou",
+            "hours": "hodinami",
+            "hours_2_4": "hodinami",
+            "second": "sekundou",
+            "seconds": "sekundami",
+            "seconds_2_4": "sekundami"
+        },
+        "activities": {
+            "breastfeeding": "Dojčenie",
+            "bottlefeeding": "Kŕmenie fľaškou",
+            "sleep": "Spánok",
+            "nappy": "Výmena plienky",
+            "no_activity": "žiadna aktivita"
+        }
+    }
+}

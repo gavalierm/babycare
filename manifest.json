@@ -1,8 +1,8 @@
 {
-    "name": "Baby Care Tracker",
-    "short_name": "Baby Care",
-    "version": "2.0.0",
-    "description": "Track baby's daily activities with real-time synchronization",
+    "name": "Starostlivosť o bábätko",
+    "short_name": "Bábätko",
+    "version": "3.0.0",
+    "description": "Sledovanie denných aktivít bábätka s real-time synchronizáciou",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#1c1c1e",

@@ -1,4 +1,4 @@
-# Baby Care Tracker v2.0.0
+# Baby Care Tracker v3.0.0
 
 A Progressive Web App for tracking baby's daily activities with real-time synchronization across devices.
 

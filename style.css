@@ -45,6 +45,7 @@ body {
     text-align: center;
     margin-bottom: 1rem;
     transition: color 0.3s ease;
+    text-transform: capitalize;
 }
 
 /* Farby nadpisu podľa typu */
@@ -104,6 +105,7 @@ body.type-nappy .stage-title { color: var(--color-nappy-pee); }
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
+    text-transform: lowercase;
 }
 
 .last-activity .time {
@@ -152,7 +154,7 @@ body.type-nappy .nav-button[onclick*="nappy"] {
     min-height: 2rem;
     font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
     color: rgba(255, 255, 255, 1);
-    font-size: 1.6rem;
+    font-size: 1.28rem;
 }
 
 /* Placeholder text */
@@ -193,6 +195,7 @@ button.nappy-poop {
     transition: all 0.2s;
     flex: 1;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-transform: capitalize;
 }
 
 /* Špecifické farby pre tlačidlá */
@@ -263,6 +266,7 @@ button.nappy-poop {
     margin-bottom: 0.8rem;
     display: flex;
     align-items: center;
+    gap: 1rem;
 }
 
 .timeline-dot {
@@ -275,7 +279,7 @@ button.nappy-poop {
 }
 
 .timeline-info {
-    flex: 1;
+    flex: 5;
     line-height: 1.6;
 }
 
@@ -284,6 +288,7 @@ button.nappy-poop {
     display: block;
     margin-bottom: 0.3rem;
     opacity: 1;
+    text-transform: capitalize;
 }
 
 .timeline-day {
@@ -295,6 +300,7 @@ button.nappy-poop {
     color: rgba(255, 255, 255, 0.85);
     margin-bottom: 1rem;
     font-weight: 500;
+    text-transform: capitalize;
 }
 
 /* Type-specific styles */
@@ -395,4 +401,46 @@ body.type-nappy #pause-btn {
 .timeline-info .time {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.9rem;
+    text-transform: lowercase;
+}
+
+/* Nappy button icons */
+.nappy-control i {
+    font-size: 1.4rem;
+}
+
+/* Špecifické farby pre nappy tlačidlá */
+button.nappy-pee i {
+    color: #000000;
+}
+
+button.nappy-poop i {
+    color: #ffffff;
+}
+
+/* Štýly pre ikonu */
+.timeline-item i {
+    font-size: 1.8rem;
+    flex: 1;
+    text-align: center;
+    min-width: 40px;
+}
+
+/* Nový wrapper pre time a duration */
+.timeline-info-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.timeline-info .time,
+.timeline-info .duration {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    text-transform: lowercase;
+}
+
+/* Štýly pre ikony v timeline-info-details */
+.timeline-info-details i {
+    font-size: 0.9rem;  /* Rovnaká veľkosť ako text */
 }

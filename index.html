@@ -10,54 +10,54 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <meta name="version" content="2.0.0">
+    <meta name="version" content="3.0.0">
 </head>
 <body class="type-breastfeeding">
     <main class="app-container">
         <!-- Stage Panel -->
         <section class="stage-panel">
-            <h1 class="stage-title">Baby Care Tracker</h1>
+            <h1 class="stage-title" data-translate="app_title">Starostlivosť o bábätko</h1>
             
             <!-- Type Selection -->
             <nav class="type-selector">
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('breastfeeding')">
                         <i class="fas fa-baby"></i>
-                        <span>Breast</span>
+                        <span data-translate="nav.breastfeeding">Dojčenie</span>
                     </button>
                     <small class="last-activity">
                         <span class="time">--</span>
-                        <span class="label">no activity</span>
+                        <span class="label" data-translate="activities.no_activity">žiadna aktivita</span>
                     </small>
                 </div>
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('bottlefeeding')">
                         <i class="fas fa-prescription-bottle"></i>
-                        <span>Bottle</span>
+                        <span data-translate="nav.bottlefeeding">Fľaška</span>
                     </button>
                     <small class="last-activity">
                         <span class="time">--</span>
-                        <span class="label">no activity</span>
+                        <span class="label" data-translate="activities.no_activity">žiadna aktivita</span>
                     </small>
                 </div>
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('sleep')">
                         <i class="fas fa-moon"></i>
-                        <span>Sleep</span>
+                        <span data-translate="nav.sleep">Spánok</span>
                     </button>
                     <small class="last-activity">
                         <span class="time">--</span>
-                        <span class="label">no activity</span>
+                        <span class="label" data-translate="activities.no_activity">žiadna aktivita</span>
                     </small>
                 </div>
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('nappy')">
                         <i class="fas fa-poo"></i>
-                        <span>Nappy</span>
+                        <span data-translate="nav.nappy">Plienka</span>
                     </button>
                     <small class="last-activity">
                         <span class="time">--</span>
-                        <span class="label">no activity</span>
+                        <span class="label" data-translate="activities.no_activity">žiadna aktivita</span>
                     </small>
                 </div>
             </nav>
@@ -71,13 +71,17 @@
             <!-- Controls -->
             <div class="controls">
                 <!-- Timer Controls -->
-                <button id="begin-btn" class="visible">Begin</button>
-                <button id="end-btn" class="stop-btn">End</button>
-                <button id="pause-btn" class="pause-btn">Pause</button>
+                <button id="begin-btn" class="visible" data-translate="controls.begin">Začať</button>
+                <button id="end-btn" class="stop-btn" data-translate="controls.end">Ukončiť</button>
+                <button id="pause-btn" class="pause-btn" data-translate="controls.pause">Pauza</button>
                 
                 <!-- Nappy Controls -->
-                <button id="pee-btn" class="nappy-pee nappy-control">PEE</button>
-                <button id="poop-btn" class="nappy-poop nappy-control">POOP</button>
+                <button id="pee-btn" class="nappy-pee nappy-control">
+                    <i class="fas fa-water"></i>
+                </button>
+                <button id="poop-btn" class="nappy-poop nappy-control">
+                    <i class="fas fa-poo"></i>
+                </button>
             </div>
         </section>
 
@@ -97,8 +101,10 @@
             <div class="timeline-dot"></div>
             <div class="timeline-info">
                 <strong></strong>
-                <div class="time"></div>
-                <div class="duration"></div>
+                <div class="timeline-info-details">
+                    <div class="time"></div>
+                    <div class="duration"></div>
+                </div>
             </div>
         </div>
     </template>

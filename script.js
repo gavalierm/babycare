@@ -4,12 +4,77 @@ let pauseTime = null;
 let totalPausedTime = 0;
 let timerInterval = null;
 let lastTimerCheck = null;
+let translations = {};
+let currentLang = 'sk';
+const TRANSLATIONS_VERSION = '3.0.0';  // Pre kontrolu verzie prekladov
+
+// Optimalizované načítanie prekladov
+async function loadTranslations() {
+    try {
+        // Skontrolujeme localStorage
+        const cachedTranslations = localStorage.getItem('translations');
+        const cachedVersion = localStorage.getItem('translationsVersion');
+        
+        // Ak máme cached verziu a je aktuálna
+        if (cachedTranslations && cachedVersion === TRANSLATIONS_VERSION) {
+            translations = JSON.parse(cachedTranslations);
+            console.log('Using cached translations');
+            return;
+        }
+        
+        // Ak nemáme cache alebo je neaktuálna, načítame zo súboru
+        const response = await fetch('translations.json');
+        translations = await response.json();
+        
+        // Uložíme do localStorage
+        localStorage.setItem('translations', JSON.stringify(translations));
+        localStorage.setItem('translationsVersion', TRANSLATIONS_VERSION);
+        console.log('Translations cached');
+    } catch (error) {
+        console.error('Failed to load translations:', error);
+    }
+}
+
+// Funkcia pre zmenu jazyka
+async function changeLanguage(lang) {
+    if (translations[lang]) {
+        currentLang = lang;
+        localStorage.setItem('currentLanguage', lang);
+        
+        // Aktualizujeme UI
+        document.querySelector('.stage-title').textContent = t('app_title');
+        // ... aktualizácia ostatných elementov
+        
+        await updateUnifiedTimeline();
+        await updateLastActivities();
+    }
+}
+
+// Helper funkcia pre preklady
+function t(key, section = null) {
+    try {
+        const keys = key.split('.');
+        let value = translations[currentLang];
+        
+        if (section) {
+            value = value[section];
+        }
+        
+        for (const k of keys) {
+            value = value[k];
+        }
+        
+        return value || key;
+    } catch (error) {
+        return key;
+    }
+}
 
 const TASK_LABELS = {
-    'breastfeeding': 'Breast Feeding',
-    'bottlefeeding': 'Bottle Feeding',
-    'sleep': 'Sleep',
-    'nappy': 'Nappy Change'
+    'breastfeeding': t('activities.breastfeeding'),
+    'bottlefeeding': t('activities.bottlefeeding'),
+    'sleep': t('activities.sleep'),
+    'nappy': t('activities.nappy')
 };
 
 // Pomocné funkcie pre formátovanie času
@@ -19,11 +84,19 @@ function formatTimeForDisplay(ms, showLabels = true) {
     const remainingSeconds = seconds % 60;
     
     if (seconds < 60) {
-        return showLabels ? `${seconds} seconds` : seconds.toString();
+        if (!showLabels) return seconds.toString();
+        
+        if (seconds === 1) return `1 ${t('duration.second')}`;
+        if (seconds < 5) return `${seconds} ${t('duration.seconds_2_4')}`;
+        return `${seconds} ${t('duration.seconds')}`;
     }
     
     const time = `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-    return showLabels ? `${time} minutes` : time;
+    if (!showLabels) return time;
+    
+    if (minutes === 1) return `${time} ${t('duration.minute')}`;
+    if (minutes < 5) return `${time} ${t('duration.minutes_2_4')}`;
+    return `${time} ${t('duration.minutes')}`;
 }
 
 function formatTimeOnly(date) {
@@ -39,10 +112,10 @@ function formatDateForGrouping(date) {
     const todayWithoutTime = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const yesterdayWithoutTime = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
     
-    if (dateWithoutTime.getTime() === todayWithoutTime.getTime()) return 'Today';
-    if (dateWithoutTime.getTime() === yesterdayWithoutTime.getTime()) return 'Yesterday';
+    if (dateWithoutTime.getTime() === todayWithoutTime.getTime()) return t('time.today');
+    if (dateWithoutTime.getTime() === yesterdayWithoutTime.getTime()) return t('time.yesterday');
     
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(currentLang === 'sk' ? 'sk-SK' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -69,7 +142,7 @@ function setActiveType(type) {
     document.body.className = `type-${type}`;
     
     const title = document.querySelector('.stage-title');
-    title.textContent = TASK_LABELS[type] || 'Baby Care Tracker';
+    title.textContent = t('activities.' + type);
 
     if (type !== 'nappy') {
         // Nastavíme štýly pre begin tlačidlo
@@ -119,20 +192,22 @@ function updateActiveTaskDisplay() {
     }
 }
 
-// Pridám novú pomocnú funkciu pre relatívny čas
+// Pridám novú pomocn�� funkciu pre relatívny čas
 function formatRelativeTime(date) {
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
     
-    if (diffInMinutes < 1) return { value: 'now', label: 'just' };
-    if (diffInMinutes === 1) return { value: '1', label: 'minute ago' };
-    if (diffInMinutes < 60) return { value: diffInMinutes, label: 'minutes ago' };
+    if (diffInMinutes < 1) return { value: t('time.just_now'), label: '' };
+    if (diffInMinutes === 1) return { value: '1', label: t('relative_time.minute') };
+    if (diffInMinutes < 5) return { value: diffInMinutes, label: t('relative_time.minutes_2_4') };
+    if (diffInMinutes < 60) return { value: diffInMinutes, label: t('relative_time.minutes') };
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours === 1) return { value: '1', label: 'hour ago' };
-    if (diffInHours < 24) return { value: diffInHours, label: 'hours ago' };
+    if (diffInHours === 1) return { value: '1', label: t('relative_time.hour') };
+    if (diffInHours < 5) return { value: diffInHours, label: t('relative_time.hours_2_4') };
+    if (diffInHours < 24) return { value: diffInHours, label: t('relative_time.hours') };
     
-    return { value: formatTimeOnly(date), label: 'time' };
+    return { value: formatTimeOnly(date), label: t('time.time') };
 }
 
 // Timeline funkcie
@@ -143,20 +218,55 @@ function createTimelineItem(task) {
     
     const taskTime = task.type === 'nappy' ? new Date(task.time) : new Date(task.startTime);
     
+    // Odstránime timeline-dot
+    item.querySelector('.timeline-dot').remove();
+    
+    // Pridáme ikonu podľa typu
+    const icon = document.createElement('i');
+    icon.className = getIconClass(task.type, task.subType);
+    icon.style.color = task.type === 'nappy' ? 
+        (task.subType === 'poop' ? 'var(--color-nappy-poop)' : 'var(--color-nappy-pee)') :
+        `var(--color-${task.type})`;
+    item.insertBefore(icon, item.firstChild);
+    
+    // Nastavíme text podľa typu aktivity
+    const titleEl = item.querySelector('strong');
+    titleEl.textContent = t('activities.' + task.type);
+    
+    // Nastavíme čas a trvanie
+    const timeEl = item.querySelector('.time');
+    const durationEl = item.querySelector('.duration');
+    const relativeTime = formatRelativeTime(taskTime);
+    
+    timeEl.textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value} ${relativeTime.label}`;
+    
     if (task.type === 'nappy') {
-        item.querySelector('.timeline-dot').classList.add(`nappy-${task.subType}`);
-        item.querySelector('strong').textContent = `Nappy Change (${task.subType === 'poop' ? '💩' : 'PEE'})`;
-        const relativeTime = formatRelativeTime(taskTime);
-        item.querySelector('.time').textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value} ${relativeTime.label}`;
+        // Pre nappy pridáme len ikonu
+        const typeIcon = document.createElement('i');
+        typeIcon.className = task.subType === 'poop' ? 'fas fa-poo' : 'fas fa-water';
+        durationEl.appendChild(typeIcon);
     } else {
-        item.querySelector('.timeline-dot').classList.add(task.type);
-        item.querySelector('strong').textContent = TASK_LABELS[task.type];
-        item.querySelector('.duration').textContent = formatTimeForDisplay(task.duration);
-        const relativeTime = formatRelativeTime(taskTime);
-        item.querySelector('.time').textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value} ${relativeTime.label}`;
+        // Pre ostatné aktivity pridáme trvanie
+        durationEl.textContent = formatTimeForDisplay(task.duration);
     }
     
     return item;
+}
+
+// Helper funkcia pre získanie správnej ikony
+function getIconClass(type, subType) {
+    switch(type) {
+        case 'breastfeeding':
+            return 'fas fa-baby';
+        case 'bottlefeeding':
+            return 'fas fa-prescription-bottle';
+        case 'sleep':
+            return 'fas fa-moon';
+        case 'nappy':
+            return subType === 'poop' ? 'fas fa-poo' : 'fas fa-water';
+        default:
+            return 'fas fa-clock';
+    }
 }
 
 function createTimelineDay(date, tasks) {
@@ -180,7 +290,7 @@ async function updateUnifiedTimeline() {
     const activities = await fetchActivities();
     
     if (!activities || activities.length === 0) {
-        timelineEl.innerHTML = '<p class="no-activities">No activities yet</p>';
+        timelineEl.innerHTML = `<p class="no-activities">${t('activities.no_activity')}</p>`;
         return;
     }
     
@@ -231,10 +341,10 @@ async function pauseTask() {
     if (pauseTime) {
         totalPausedTime += new Date() - pauseTime;
         pauseTime = null;
-        buttons.pauseBtn.textContent = 'Pause';
+        buttons.pauseBtn.textContent = t('controls.pause');
     } else {
         pauseTime = new Date();
-        buttons.pauseBtn.textContent = 'Resume';
+        buttons.pauseBtn.textContent = t('controls.resume');
     }
     
     await saveActiveTimer();
@@ -357,7 +467,7 @@ async function loadActiveTimer() {
             buttons.startBtn.classList.remove('visible');
             buttons.stopBtn.classList.add('visible');
             buttons.pauseBtn.classList.add('visible');
-            buttons.pauseBtn.textContent = pauseTime ? 'Resume' : 'Pause';
+            buttons.pauseBtn.textContent = pauseTime ? t('controls.resume') : t('controls.pause');
             
             updateTimer();
             if (!pauseTime) {
@@ -431,13 +541,27 @@ async function updateLastActivities() {
             labelEl.textContent = relativeTime.label;
         } else {
             timeEl.textContent = '--';
-            labelEl.textContent = 'no activity';
+            labelEl.textContent = t('activities.no_activity');
         }
     });
 }
 
+// Upravíme funkciu updateUITranslations
+function updateUITranslations() {
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        const key = element.getAttribute('data-translate');
+        element.textContent = t(key);
+    });
+    
+    // Aktualizujeme title
+    document.title = t('app_title');
+}
+
 // Inicializácia
 document.addEventListener('DOMContentLoaded', async () => {
+    await loadTranslations();
+    updateUITranslations();  // Aktualizujeme všetky preklady
+    
     if (!activeTask) {
         setActiveType('breastfeeding');
     }
