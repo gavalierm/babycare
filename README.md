@@ -1,50 +1,53 @@
-# Baby Day Tracker
+# Baby Care Tracker
 
-A simple web application to track your baby's daily activities including:
+A Progressive Web App for tracking baby's daily activities including feeding, sleeping, and nappy changes.
 
 ## Features
 
-### Feeding Tracking
-- Breastfeeding timer with pause/resume functionality
-- Bottle feeding timer with pause/resume functionality
-- Track duration of each feeding session
-
-### Sleep Tracking
-- Sleep timer with pause/resume functionality
-- Track total sleep duration
-- Monitor sleep patterns
-
-### Diaper Changes
-- Quick logging of diaper changes
-- Differentiate between wet (pee) and soiled (poop) diapers
-- Track timing of changes
-
-### Statistics
-- Timeline view of all activities
-- Chronological display of events
-- Detailed information including start time, end time, and duration
-- Persistent storage using localStorage
+- Track multiple activities:
+  - Breast Feeding
+  - Bottle Feeding
+  - Sleeping
+  - Nappy Changes (Pee/Poop)
+- Real-time timer with pause functionality
+- Recent activities display (last 6 entries)
+- Daily log with relative dates (Today/Yesterday)
+- Offline support with network-only strategy
+- Installable as PWA
+- Local storage for data persistence
 
 ## Technical Details
 
-- Built with vanilla JavaScript
-- Uses HTML5 and CSS3
-- Mobile-first responsive design
-- No external dependencies
-- Offline capable
-- iOS/Safari safe area support
+- Pure JavaScript, HTML, and CSS
+- Font Awesome icons
+- Service Worker for offline handling
+- PWA manifest for installation
+- Responsive design for mobile devices
+
+## Installation
+
+1. Clone the repository
+2. Serve the files using a web server
+3. Access through a browser
+4. Can be installed as PWA through browser's install option
+
+## File Structure
+
+- `index.html` - Main application structure
+- `style.css` - All styling and animations
+- `script.js` - Application logic and data handling
+- `manifest.json` - PWA configuration
+- `sw.js` - Service Worker for network-only strategy
+- `icons/` - Application icons for PWA
 
 ## Usage
 
-Simply open `index.html` in a web browser. The application works on both desktop and mobile devices.
+- Select activity type from bottom navigation
+- Use Start/Stop/Pause buttons to control timer
+- View recent activities in mini-timeline
+- Check full history in Log section
+- Nappy changes can be logged with single tap
 
 ## Data Storage
 
-All data is stored locally in your browser using localStorage. No data is sent to any server.
-
-## Design
-
-- Clean, minimalist interface
-- Large, easy-to-tap buttons
-- Color-coded activities for easy recognition
-- Bottom navigation for quick access to different features
+All data is stored locally using browser's localStorage.
