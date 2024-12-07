@@ -151,6 +151,10 @@ body.type-nappy .nav-button[onclick*="nappy"] {
     font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
     color: rgba(255, 255, 255, 1);
     font-size: 1.28rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
 }
 
 .active-timer .time::before {
@@ -343,4 +347,62 @@ button.nappy-poop i {
 
 .timeline-info-details i {
     font-size: 0.9rem;
+}
+
+.milk-amount {
+    display: none;  /* Defaultne skryté */
+    min-height: 50px;
+    padding: 1rem;
+    border-radius: 25px;
+    border: 2px solid transparent;  /* Pridáme border pre smooth transition */
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    background: #3a3a3c;
+    color: #ffffff;
+}
+
+.milk-amount:focus {
+    outline: none;
+    background: #4a4a4c;
+}
+
+/* Červený border pre neplatné hodnoty */
+.milk-amount:invalid,
+.milk-amount.invalid {
+    border-color: #ff453a;
+}
+
+/* Zobrazíme input len pre bottle feeding */
+body.type-bottlefeeding .milk-amount {
+    display: block;
+}
+
+/* Upravíme placeholder */
+.milk-amount::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.timeline {
+    /* Zachováme len potrebné štýly */
+}
+
+.milk-amount.hidden {
+    display: none !important;
+}
+
+.active-timer .parameter {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    flex: 1;
+    text-align: center;
+    visibility: hidden;
+}
+
+/* Zobrazíme parameter len pre bottle feeding */
+body.type-bottlefeeding .active-timer .parameter {
+    visibility: visible;
 }

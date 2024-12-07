@@ -49,6 +49,7 @@ function handleException($e) {
 set_exception_handler('handleException');
 
 const DB_FILE = 'baby_tracker.sqlite';
+const DB_VERSION = 2;  // Zvýšime verziu databázy
 const APP_VERSION = '1.0.0';
 
 // Spracovanie OPTIONS requestu pre CORS
@@ -57,12 +58,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// Inicializácia SQLite databázy
+// Funkcia pre kontrolu a vykonanie migrácií
+function checkAndMigrate($db) {
+    // Vytvoríme tabuľku pre sledovanie verzie databázy
+    $db->exec('
+        CREATE TABLE IF NOT EXISTS db_version (
+            version INTEGER PRIMARY KEY
+        )
+    ');
+    
+    // Zistíme aktuálnu verziu databázy
+    $currentVersion = $db->querySingle('SELECT version FROM db_version LIMIT 1') ?: 0;
+    
+    // Ak je verzia nižšia ako požadovaná, spustíme migrácie
+    if ($currentVersion < DB_VERSION) {
+        // Migrácie vykonávame postupne
+        if ($currentVersion < 1) {
+            // Základná štruktúra - už existuje v initDatabase
+            $currentVersion = 1;
+        }
+        
+        if ($currentVersion < 2) {
+            // Pridanie stĺpca milk_amount
+            try {
+                $db->exec('ALTER TABLE activities ADD COLUMN milk_amount INTEGER DEFAULT NULL');
+                $currentVersion = 2;
+            } catch (Exception $e) {
+                throw new Exception('Migration to version 2 failed: ' . $e->getMessage());
+            }
+        }
+        
+        // Aktualizujeme verziu v databáze
+        $db->exec('DELETE FROM db_version');
+        $db->exec("INSERT INTO db_version (version) VALUES ($currentVersion)");
+    }
+}
+
+// Upravíme inicializáciu databázy
 function initDatabase() {
     try {
         $db = new SQLite3(DB_FILE);
         
-        // Vytvorenie tabuľky pre históriu aktivít
+        // Vytvorenie základnej štruktúry
         $db->exec('
             CREATE TABLE IF NOT EXISTS activities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,32 +113,6 @@ function initDatabase() {
             )
         ');
         
-        // Kontrola či existujú nejaké záznamy
-        $count = $db->querySingle('SELECT COUNT(*) FROM activities');
-        
-        // Ak nie sú žiadne záznamy, pridáme testovací
-        if ($count === 0) {
-            $now = date('c'); // ISO 8601 formát
-            $fiveMinutesAgo = date('c', strtotime('-5 minutes'));
-            $duration = 5 * 60 * 1000; // 5 minút v milisekundách
-            
-            $db->exec("
-                INSERT INTO activities (
-                    type, 
-                    start_time, 
-                    end_time, 
-                    duration, 
-                    paused_time
-                ) VALUES (
-                    'breastfeeding',
-                    '$fiveMinutesAgo',
-                    '$now',
-                    $duration,
-                    0
-                )
-            ");
-        }
-        
         $db->exec('
             CREATE TABLE IF NOT EXISTS active_timer (
                 id INTEGER PRIMARY KEY,
@@ -112,10 +123,12 @@ function initDatabase() {
             )
         ');
         
+        // Kontrola a vykonanie migrácií
+        checkAndMigrate($db);
+        
         return $db;
     } catch (Exception $e) {
-        echo json_encode(['error' => 'Database initialization failed', 'data' => []]);
-        exit;
+        throw new Exception('Database initialization failed: ' . $e->getMessage());
     }
 }
 
@@ -133,15 +146,18 @@ try {
             $action = $_GET['action'] ?? null;
             
             if ($action === 'active-timer') {
-                // Vrátime aktívny časovač
                 $stmt = $db->prepare('
-                    SELECT * FROM active_timer 
-                    WHERE id = 1
+                    SELECT t.*, a.milk_amount 
+                    FROM active_timer t
+                    LEFT JOIN activities a ON a.type = t.task_type 
+                    AND a.start_time = t.start_time
+                    WHERE t.id = 1
                 ');
                 $result = $stmt->execute();
                 $timer = $result->fetchArray(SQLITE3_ASSOC);
                 $response['data'] = $timer ?? null;
-                break;
+                echo json_encode($response);
+                exit;
             }
             
             if ($type === '') {  // Prázdny parameter
@@ -185,6 +201,11 @@ try {
                 if ($row['type'] === 'nappy') {
                     $activity['subType'] = $row['sub_type'];
                     $activity['time'] = $row['start_time'];
+                }
+                
+                // Pridáme milk_amount pre bottle feeding
+                if ($row['type'] === 'bottlefeeding') {
+                    $activity['milkAmount'] = isset($row['milk_amount']) ? (int)$row['milk_amount'] : null;
                 }
                 
                 $activities[] = $activity;
@@ -239,8 +260,22 @@ try {
                 $stmt->bindValue(':subType', $input['subType'], SQLITE3_TEXT);
             } else {
                 $stmt = $db->prepare('
-                    INSERT INTO activities (type, start_time, end_time, duration, paused_time)
-                    VALUES (:type, :startTime, :endTime, :duration, :pausedTime)
+                    INSERT INTO activities (
+                        type, 
+                        start_time, 
+                        end_time, 
+                        duration, 
+                        paused_time,
+                        milk_amount
+                    )
+                    VALUES (
+                        :type, 
+                        :startTime, 
+                        :endTime, 
+                        :duration, 
+                        :pausedTime,
+                        :milkAmount
+                    )
                 ');
                 
                 $stmt->bindValue(':type', $input['type'], SQLITE3_TEXT);
@@ -248,6 +283,13 @@ try {
                 $stmt->bindValue(':endTime', $input['endTime'], SQLITE3_TEXT);
                 $stmt->bindValue(':duration', $input['duration'], SQLITE3_INTEGER);
                 $stmt->bindValue(':pausedTime', $input['pausedTime'], SQLITE3_INTEGER);
+                
+                // Pridáme milk_amount pre bottle feeding
+                if ($input['type'] === 'bottlefeeding' && isset($input['milkAmount'])) {
+                    $stmt->bindValue(':milkAmount', $input['milkAmount'], SQLITE3_INTEGER);
+                } else {
+                    $stmt->bindValue(':milkAmount', null, SQLITE3_NULL);
+                }
             }
             
             $result = $stmt->execute();

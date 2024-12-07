@@ -1,4 +1,4 @@
-# Baby Care Tracker v3.2.0
+# Baby Care Tracker v3.3.1
 
 A Progressive Web App for tracking baby's daily activities with real-time synchronization across devices.
 
@@ -68,6 +68,16 @@ A Progressive Web App for tracking baby's daily activities with real-time synchr
 - `icons/` - Application icons
 
 ## Changelog
+
+### v3.3.1
+- Added milk amount tracking for bottle feeding
+- Added input validation for milk amount (30-500ml)
+- Improved timeline display with milk amount information
+- Added automatic focus on milk amount input
+- Database migration system implemented
+- Unified translation keys
+- Fixed placeholder translations
+- Code cleanup and optimizations
 
 ### v3.2.0
 - Optimized mobile design

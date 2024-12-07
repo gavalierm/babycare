@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <meta name="version" content="3.2.0">
+    <meta name="version" content="3.3.1">
 </head>
 <body class="type-breastfeeding">
     <main class="app-container">
@@ -23,7 +23,7 @@
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('breastfeeding')">
                         <i class="fas fa-baby"></i>
-                        <span data-translate="nav.breastfeeding">Dojčenie</span>
+                        <span data-translate="activities.breastfeeding">Dojčenie</span>
                     </button>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
@@ -33,7 +33,7 @@
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('bottlefeeding')">
                         <i class="fas fa-prescription-bottle"></i>
-                        <span data-translate="nav.bottlefeeding">Fľaška</span>
+                        <span data-translate="activities.bottlefeeding">Fľaška</span>
                     </button>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
@@ -43,7 +43,7 @@
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('sleep')">
                         <i class="fas fa-moon"></i>
-                        <span data-translate="nav.sleep">Spánok</span>
+                        <span data-translate="activities.sleep">Spánok</span>
                     </button>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
@@ -53,7 +53,7 @@
                 <div class="nav-item">
                     <button class="nav-button" onclick="setActiveType('nappy')">
                         <i class="fas fa-poo"></i>
-                        <span data-translate="nav.nappy">Plienka</span>
+                        <span data-translate="activities.nappy">Plienka</span>
                     </button>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
@@ -65,6 +65,7 @@
             <!-- Active Timer Display -->
             <div class="active-timer">
                 <span class="duration"></span>
+                <span class="parameter"></span>
                 <span class="time"></span>
             </div>
 
@@ -74,6 +75,16 @@
                 <button id="begin-btn" class="visible" data-translate="controls.begin">Začať</button>
                 <button id="end-btn" class="stop-btn" data-translate="controls.end">Ukončiť</button>
                 <button id="pause-btn" class="pause-btn" data-translate="controls.pause">Pauza</button>
+                
+                <!-- Nový input pre množstvo mlieka -->
+                <input type="number" 
+                       id="milk-amount" 
+                       class="milk-amount" 
+                       min="30" 
+                       max="500" 
+                       step="5"
+                       placeholder="Množstvo v ml"
+                       data-translate="controls.milk_amount_placeholder">
                 
                 <!-- Nappy Controls -->
                 <button id="pee-btn" class="nappy-pee nappy-control">
@@ -88,7 +99,7 @@
         <!-- Log Panel -->
         <section class="log-panel">
             <div class="log-scroll-container">
-                <div class="unified-timeline" id="unified-timeline">
+                <div class="timeline" id="timeline">
                     <!-- Timeline items will be inserted here -->
                 </div>
             </div>

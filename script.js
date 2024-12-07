@@ -6,7 +6,7 @@ let timerInterval = null;
 let lastTimerCheck = null;
 let translations = {};
 let currentLang = 'sk';
-const TRANSLATIONS_VERSION = '3.2.0';  // Pre kontrolu verzie prekladov
+const TRANSLATIONS_VERSION = '3.3.1';  // Pre kontrolu verzie prekladov
 
 // Optimalizované načítanie prekladov
 async function loadTranslations() {
@@ -45,7 +45,7 @@ async function changeLanguage(lang) {
         document.querySelector('.stage-title').textContent = t('app_title');
         // ... aktualizácia ostatných elementov
         
-        await updateUnifiedTimeline();
+        await updateTimeline();
         await updateLastActivities();
     }
 }
@@ -78,27 +78,6 @@ const TASK_LABELS = {
 };
 
 // Pomocné funkcie pre formátovanie času
-function formatTimeForDisplay(ms, showLabels = true) {
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    
-    if (seconds < 60) {
-        if (!showLabels) return seconds.toString();
-        
-        if (seconds === 1) return `1 ${t('duration.second')}`;
-        if (seconds >= 2 && seconds <= 4) return `${seconds} ${t('duration.seconds_2_4')}`;
-        return `${seconds} ${t('duration.seconds')}`;
-    }
-    
-    const time = `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
-    if (!showLabels) return time;
-    
-    if (minutes === 1) return `${time} ${t('duration.minute')}`;
-    if (minutes >= 2 && minutes <= 4) return `${time} ${t('duration.minutes_2_4')}`;
-    return `${time} ${t('duration.minutes')}`;
-}
-
 function formatTimeOnly(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
@@ -159,6 +138,14 @@ function setActiveType(type) {
         
         if (endBtn) endBtn.onclick = () => stopTask(type);
         if (pauseBtn) pauseBtn.onclick = () => pauseTask(type);
+        
+        // Pridáme focus na input pre bottle feeding
+        if (type === 'bottlefeeding') {
+            const input = document.getElementById('milk-amount');
+            if (!activeTask) {  // Len ak nie je aktívna úloha
+                setTimeout(() => input.focus(), 100);  // Počkáme na CSS transition
+            }
+        }
     } else {
         // Nastavíme event listeners pre nappy tlačidlá
         const peeBtn = document.getElementById('pee-btn');
@@ -176,7 +163,16 @@ function updateTimer() {
     const activeTimer = document.querySelector('.active-timer');
     
     activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
-    activeTimer.querySelector('.duration').textContent = formatTimeForDisplay(elapsed, false);
+    activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed, true).value;
+    
+    // Pridáme parameter pre bottle feeding
+    const parameterEl = activeTimer.querySelector('.parameter');
+    if (activeTask === 'bottlefeeding') {
+        const amount = document.getElementById('milk-amount').value;
+        parameterEl.textContent = `${amount}ml`;
+    } else {
+        parameterEl.textContent = '';
+    }
 }
 
 function updateActiveTaskDisplay() {
@@ -185,7 +181,7 @@ function updateActiveTaskDisplay() {
     if (activeTask && startTime) {
         const elapsed = new Date() - startTime - totalPausedTime;
         activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
-        activeTimer.querySelector('.duration').textContent = formatTimeForDisplay(elapsed);
+        activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed).value;
     } else {
         activeTimer.querySelector('.time').textContent = '';
         activeTimer.querySelector('.duration').textContent = '';
@@ -193,36 +189,58 @@ function updateActiveTaskDisplay() {
 }
 
 // Pridám novú pomocnú funkciu pre relatívny čas
-function formatRelativeTime(date) {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now - date) / 1000);
-    
-    // Menej ako minúta - zobrazíme sekundy
-    if (diffInSeconds < 60) {
-        return { value: `${diffInSeconds}s`, label: '' };
-    }
-    
-    const diffInMinutes = Math.floor(diffInSeconds / 60);
-    
-    // Menej ako hodina - zobrazíme len minúty
-    if (diffInMinutes < 60) {
-        return { value: `${diffInMinutes}m`, label: '' };
-    }
-    
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    const remainingMinutes = diffInMinutes % 60;
-    
-    // Menej ako deň - zobrazíme hodiny a minúty
-    if (diffInHours < 24) {
-        if (remainingMinutes === 0) {
-            return { value: `${diffInHours}h`, label: '' };
+function formatRelativeTime(date, isDuration = false) {
+    if (isDuration) {
+        // Pre duration počítame priamo z milisekúnd
+        const seconds = Math.floor(date / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        const remainingSeconds = seconds % 60;
+        
+        if (seconds < 60) {
+            return { value: `${seconds}s`, label: '' };
         }
-        return { value: `${diffInHours}h ${remainingMinutes}m`, label: '' };
+        
+        if (minutes < 60) {
+            // Pre rozsah 1-60 minút zobrazíme aj sekundy
+            return { value: `${minutes}m ${remainingSeconds}s`, label: '' };
+        }
+        
+        if (remainingMinutes === 0) {
+            return { value: `${hours}h`, label: '' };
+        }
+        return { value: `${hours}h ${remainingMinutes}m`, label: '' };
+    } else {
+        // Pôvodná logika pre relatívny čas
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return { value: `${diffInSeconds}s`, label: '' };
+        }
+        
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        const remainingSeconds = diffInSeconds % 60;
+        
+        if (diffInMinutes < 60) {
+            // Pre rozsah 1-60 minút zobrazíme aj sekundy
+            return { value: `${diffInMinutes}m ${remainingSeconds}s`, label: '' };
+        }
+        
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        const remainingMinutes = diffInMinutes % 60;
+        
+        if (diffInHours < 24) {
+            if (remainingMinutes === 0) {
+                return { value: `${diffInHours}h`, label: '' };
+            }
+            return { value: `${diffInHours}h ${remainingMinutes}m`, label: '' };
+        }
+        
+        const diffInDays = Math.floor(diffInHours / 24);
+        return { value: `${diffInDays}d`, label: '' };
     }
-    
-    // Viac ako deň - zobrazíme dni
-    const diffInDays = Math.floor(diffInHours / 24);
-    return { value: `${diffInDays}d`, label: '' };
 }
 
 // Timeline funkcie
@@ -246,7 +264,12 @@ function createTimelineItem(task) {
     
     // Nastavíme text podľa typu aktivity
     const titleEl = item.querySelector('strong');
-    titleEl.textContent = t('activities.' + task.type);
+    if (task.type === 'bottlefeeding') {
+        const amount = task.milkAmount !== null ? task.milkAmount : 0;
+        titleEl.textContent = `${t('activities.' + task.type)} • ${amount}ml`;
+    } else {
+        titleEl.textContent = t('activities.' + task.type);
+    }
     
     // Nastavíme čas a trvanie
     const timeEl = item.querySelector('.time');
@@ -263,7 +286,7 @@ function createTimelineItem(task) {
         durationEl.appendChild(typeIcon);
     } else {
         // Pre ostatné aktivity pridáme trvanie
-        durationEl.textContent = formatTimeForDisplay(task.duration);
+        durationEl.textContent = formatRelativeTime(task.duration, true).value;
     }
     
     return item;
@@ -300,9 +323,9 @@ function createTimelineDay(date, tasks) {
     return container;
 }
 
-// Upravíme updateUnifiedTimeline
-async function updateUnifiedTimeline() {
-    const timelineEl = document.getElementById('unified-timeline');
+// Upravíme updateTimeline
+async function updateTimeline() {
+    const timelineEl = document.getElementById('timeline');
     const activities = await fetchActivities();
     
     if (!activities || activities.length === 0) {
@@ -330,9 +353,32 @@ async function updateUnifiedTimeline() {
     timelineEl.appendChild(fragment);
 }
 
-// Task control funkcie
+// Pridáme validáciu množstva mlieka
+function validateMilkAmount() {
+    const input = document.getElementById('milk-amount');
+    const amount = parseInt(input.value);
+    const isValid = amount >= 30 && amount <= 500;
+    
+    // Nastavíme alebo odstránime triedu invalid podľa validácie
+    input.classList.toggle('invalid', !isValid);
+    
+    return isValid;
+}
+
+// Upravíme funkciu startTask
 async function startTask(type) {
     if (activeTask) return;
+    
+    // Pre bottle feeding kontrolujeme množstvo mlieka
+    if (type === 'bottlefeeding') {
+        const input = document.getElementById('milk-amount');
+        if (!input.value || !validateMilkAmount()) {
+            input.focus();
+            return;
+        }
+        // Skryjeme input po začatí
+        input.classList.add('hidden');
+    }
     
     activeTask = type;
     startTime = new Date();
@@ -342,6 +388,11 @@ async function startTask(type) {
     buttons.startBtn.classList.remove('visible');
     buttons.stopBtn.classList.add('visible');
     buttons.pauseBtn.classList.add('visible');
+    
+    // Disable milk amount input počas aktivity
+    if (type === 'bottlefeeding') {
+        document.getElementById('milk-amount').disabled = true;
+    }
     
     updateTimer();
     timerInterval = setInterval(updateTimer, 1000);
@@ -366,6 +417,7 @@ async function pauseTask() {
     await saveActiveTimer();
 }
 
+// Upravíme funkciu stopTask
 async function stopTask() {
     if (!activeTask) return;
     
@@ -385,16 +437,27 @@ async function stopTask() {
             })
         });
 
+        const data = {
+            type: activeTask,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            duration: duration,
+            pausedTime: totalPausedTime
+        };
+
+        // Pridáme množstvo mlieka pre bottle feeding
+        if (activeTask === 'bottlefeeding') {
+            const milkInput = document.getElementById('milk-amount');
+            const milkAmount = parseInt(milkInput.value);
+            if (!isNaN(milkAmount) && milkAmount >= 30 && milkAmount <= 500) {
+                data.milkAmount = milkAmount;
+            }
+        }
+
         await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: activeTask,
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-                duration: duration,
-                pausedTime: totalPausedTime
-            })
+            body: JSON.stringify(data)
         });
         
         const buttons = getControlButtons();
@@ -402,12 +465,20 @@ async function stopTask() {
         buttons.stopBtn.classList.remove('visible');
         buttons.pauseBtn.classList.remove('visible');
         
+        // Reset milk amount input
+        if (activeTask === 'bottlefeeding') {
+            const input = document.getElementById('milk-amount');
+            input.disabled = false;
+            input.value = '';
+            input.classList.remove('hidden');  // Zobrazíme input späť
+        }
+        
         activeTask = null;
         startTime = null;
         pauseTime = null;
         totalPausedTime = 0;
         
-        await updateUnifiedTimeline();
+        await updateTimeline();
         await updateLastActivities();
     } catch (error) {
         console.error('Failed to save activity:', error);
@@ -426,7 +497,7 @@ async function logNappy(type) {
             })
         });
         
-        await updateUnifiedTimeline();
+        await updateTimeline();
         await updateLastActivities();
     } catch (error) {
         console.error('Failed to save nappy change:', error);
@@ -485,6 +556,14 @@ async function loadActiveTimer() {
             buttons.pauseBtn.classList.add('visible');
             buttons.pauseBtn.textContent = pauseTime ? t('controls.resume') : t('controls.pause');
             
+            // Pridáme nastavenie pre bottle feeding
+            if (activeTask === 'bottlefeeding' && timer.milk_amount) {
+                const input = document.getElementById('milk-amount');
+                input.value = timer.milk_amount;
+                input.disabled = true;
+                input.classList.add('hidden');
+            }
+            
             updateTimer();
             if (!pauseTime) {
                 timerInterval = setInterval(updateTimer, 1000);
@@ -520,7 +599,7 @@ async function checkTimerUpdates() {
             if (buttons.stopBtn) buttons.stopBtn.classList.remove('visible');
             if (buttons.pauseBtn) buttons.pauseBtn.classList.remove('visible');
             
-            await updateUnifiedTimeline();
+            await updateTimeline();
         }
     } catch (error) {
         console.error('Failed to check timer updates:', error);
@@ -569,6 +648,14 @@ function updateUITranslations() {
         element.textContent = t(key);
     });
     
+    // Pridáme preklady pre placeholdery
+    document.querySelectorAll('[data-translate]').forEach(element => {
+        if (element.hasAttribute('placeholder')) {
+            const key = element.getAttribute('data-translate');
+            element.placeholder = t(key);
+        }
+    });
+    
     // Aktualizujeme title
     document.title = t('app_title');
 }
@@ -583,9 +670,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     
     await loadActiveTimer();
-    await updateUnifiedTimeline();
+    await updateTimeline();
     await updateLastActivities();
 });
 
 // Polling
 setInterval(checkTimerUpdates, 5000);
+
+// Pridáme event listener pre input na real-time validáciu
+document.addEventListener('DOMContentLoaded', () => {
+    const milkInput = document.getElementById('milk-amount');
+    milkInput.addEventListener('input', validateMilkAmount);
+});
