@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>Baby Care Tracker</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1c1c1e">
@@ -67,6 +67,9 @@
                 <!-- Breastfeeding Controls -->
                 <div class="type-controls type-breastfeeding">
                     <div class="controls">
+                        <button class="control-btn add-btn" onclick="showAddRecordModal('breastfeeding')">
+                            <i class="fas fa-plus"></i>
+                        </button>
                         <button class="control-btn begin-btn" id="breastfeeding-begin" data-translate="controls.begin">Začať</button>
                         <button class="control-btn stop-btn" id="breastfeeding-stop" data-translate="controls.end">Ukončiť</button>
                         <button class="control-btn pause-btn" id="breastfeeding-pause">
@@ -82,10 +85,8 @@
                 <!-- Bottlefeeding Controls -->
                 <div class="type-controls type-bottlefeeding">
                     <div class="controls">
-                        <button class="control-btn begin-btn" id="bottlefeeding-begin" data-translate="controls.begin">Začať</button>
-                        <button class="control-btn stop-btn" id="bottlefeeding-stop" data-translate="controls.end">Ukončiť</button>
-                        <button class="control-btn pause-btn" id="bottlefeeding-pause">
-                            <i class="fas fa-pause"></i>
+                        <button class="control-btn add-btn" onclick="showAddRecordModal('bottlefeeding')">
+                            <i class="fas fa-plus"></i>
                         </button>
                         <input type="number" 
                                class="control-btn milk-amount" 
@@ -95,6 +96,11 @@
                                step="5"
                                placeholder="Množstvo v ml"
                                data-translate="controls.milk_amount_placeholder">
+                        <button class="control-btn begin-btn" id="bottlefeeding-begin" data-translate="controls.begin">Začať</button>
+                        <button class="control-btn stop-btn" id="bottlefeeding-stop" data-translate="controls.end">Ukončiť</button>
+                        <button class="control-btn pause-btn" id="bottlefeeding-pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
                     </div>
                     <div class="active-timer">
                         <span class="duration"></span>
@@ -106,6 +112,9 @@
                 <!-- Sleep Controls -->
                 <div class="type-controls type-sleep">
                     <div class="controls">
+                        <button class="control-btn add-btn" onclick="showAddRecordModal('sleep')">
+                            <i class="fas fa-plus"></i>
+                        </button>
                         <button class="control-btn begin-btn" id="sleep-begin" data-translate="controls.begin">Začať</button>
                         <button class="control-btn stop-btn" id="sleep-stop" data-translate="controls.end">Ukončiť</button>
                         <button class="control-btn pause-btn" id="sleep-pause">
@@ -121,6 +130,9 @@
                 <!-- Nappy Controls -->
                 <div class="type-controls type-nappy">
                     <div class="controls">
+                        <button class="control-btn add-btn" onclick="showAddRecordModal('nappy')">
+                            <i class="fas fa-plus"></i>
+                        </button>
                         <button class="control-btn nappy-control" id="nappy-pee" data-type="pee">
                             <i class="fas fa-water"></i>
                         </button>
@@ -134,10 +146,66 @@
 
         <!-- Log Panel -->
         <section class="log-panel">
-                <div class="timeline" id="timeline">
-                    <!-- Timeline items will be inserted here -->
-                </div>
+            <div class="timeline" id="timeline">
+                <!-- Timeline items will be inserted here -->
+            </div>
         </section>
+
+        <!-- Add Record Modal -->
+        <div class="modal" id="add-record-modal">
+            <div class="modal-content">
+                <div class="modal-title">
+                    <span class="modal-subtitle" data-translate="modal.add_record">Pridať záznam</span>
+                    <h2 class="modal-type" data-translate="activities"></h2>
+                </div>
+                
+                <div class="modal-form">
+                    <!-- Dynamic form fields -->
+                    <div id="time-fields" class="form-group">
+                        <div class="time-field">
+                            <label data-translate="modal.start_time">Začiatok</label>
+                            <div class="datetime-inputs">
+                                <input type="date" id="start-date" class="date-input">
+                                <input type="time" id="start-time" class="time-input">
+                            </div>
+                        </div>
+                        <div class="time-field">
+                            <label data-translate="modal.end_time">Koniec</label>
+                            <div class="datetime-inputs">
+                                <input type="date" id="end-date" class="date-input">
+                                <input type="time" id="end-time" class="time-input">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="nappy-fields" class="form-group" style="display: none;">
+                        <label data-translate="modal.nappy_type">Typ</label>
+                        <div class="button-group">
+                            <button class="nappy-type-btn" data-type="pee" onclick="selectNappyType('pee')">
+                                <i class="fas fa-water"></i>
+                                <span data-translate="activities.nappy_pee">Cikanie</span>
+                            </button>
+                            <button class="nappy-type-btn" data-type="poop" onclick="selectNappyType('poop')">
+                                <i class="fas fa-poo"></i>
+                                <span data-translate="activities.nappy_poop">Kakanie</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="bottle-fields" class="form-group" style="display: none;">
+                        <label data-translate="modal.milk_amount">Množstvo mlieka (ml)</label>
+                        <input type="number" id="milk-amount" min="30" max="500" step="5">
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="control-btn" onclick="hideAddRecordModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <button class="control-btn" onclick="saveRecord()" data-translate="modal.save">Uložiť</button>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Templates -->

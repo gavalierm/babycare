@@ -52,6 +52,19 @@
             "day": "dňom",
             "days": "dňami",
             "days_2_4": "dňami"
+        },
+        "modal": {
+            "add_record": "Pridať záznam",
+            "type": "Typ aktivity",
+            "start_time": "Začiatok",
+            "end_time": "Koniec",
+            "nappy_type": "Typ",
+            "milk_amount": "Množstvo mlieka (ml)",
+            "cancel": "Zrušiť",
+            "save": "Uložiť",
+            "select_nappy_type": "Vyberte typ plienky",
+            "invalid_time_range": "Neplatný časový rozsah",
+            "invalid_milk_amount": "Neplatné množstvo mlieka"
         }
     }
 }

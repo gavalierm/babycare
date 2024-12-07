@@ -1,6 +1,6 @@
 # Baby Care Tracker
 
-Version: 3.3.4
+Version: 3.4.0
 
 A Progressive Web App for tracking baby's daily activities with real-time synchronization across devices.
 
@@ -70,6 +70,19 @@ A Progressive Web App for tracking baby's daily activities with real-time synchr
 - `icons/` - Application icons
 
 ## Changelog
+
+### v3.4.0
+- Added manual record entry for all activity types
+- Added new modal window for record entry
+- Added separated date and time inputs for better usability
+- Added plus button for each activity type
+- Improved bottle feeding controls layout
+- Optimized form elements layout in modal window
+- Enhanced iOS safe area support
+- Improved visual distinction of activity types in modal
+- Added zoom prevention for better mobile experience
+- Optimized date and time handling
+- Enhanced input validation
 
 ### v3.3.4
 - Fixed inconsistent pause/play icon display when starting timer

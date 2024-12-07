@@ -802,3 +802,147 @@ async function fetchFromAPI(params = {}) {
         throw error;
     }
 }
+
+// Modal functions
+function showAddRecordModal(type) {
+    const modal = document.getElementById('add-record-modal');
+    modal.style.display = 'flex';
+    
+    // Nastavíme text typu aktivity
+    const typeText = document.querySelector('.modal-type');
+    typeText.textContent = t('activities.' + type);
+    
+    // Nastavíme predvolené hodnoty
+    const now = new Date();
+    const fiveMinutesAgo = new Date(now - 5 * 60 * 1000);
+    
+    // Formátujeme dátum a čas samostatne
+    const dateStr = now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0');
+    const timeStr = String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0');
+    
+    const startDateStr = fiveMinutesAgo.getFullYear() + '-' +
+        String(fiveMinutesAgo.getMonth() + 1).padStart(2, '0') + '-' +
+        String(fiveMinutesAgo.getDate()).padStart(2, '0');
+    const startTimeStr = String(fiveMinutesAgo.getHours()).padStart(2, '0') + ':' +
+        String(fiveMinutesAgo.getMinutes()).padStart(2, '0');
+    
+    document.getElementById('start-date').value = startDateStr;
+    document.getElementById('start-time').value = startTimeStr;
+    document.getElementById('end-date').value = dateStr;
+    document.getElementById('end-time').value = timeStr;
+    
+    // Nastavíme typ aktivity
+    const typeFields = document.getElementById('time-fields');
+    const nappyFields = document.getElementById('nappy-fields');
+    const bottleFields = document.getElementById('bottle-fields');
+    
+    typeFields.style.display = type !== 'nappy' ? 'block' : 'none';
+    nappyFields.style.display = type === 'nappy' ? 'block' : 'none';
+    bottleFields.style.display = type === 'bottlefeeding' ? 'block' : 'none';
+    
+    // Reset nappy type selection
+    selectedNappyType = null;
+    document.querySelectorAll('.nappy-type-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    
+    // Uložíme typ do data atribútu pre použitie pri ukladaní
+    modal.dataset.type = type;
+}
+
+function hideAddRecordModal() {
+    document.getElementById('add-record-modal').style.display = 'none';
+}
+
+function handleRecordTypeChange() {
+    const type = document.getElementById('record-type').value;
+    const timeFields = document.getElementById('time-fields');
+    const nappyFields = document.getElementById('nappy-fields');
+    const bottleFields = document.getElementById('bottle-fields');
+    
+    timeFields.style.display = type !== 'nappy' ? 'block' : 'none';
+    nappyFields.style.display = type === 'nappy' ? 'block' : 'none';
+    bottleFields.style.display = type === 'bottlefeeding' ? 'block' : 'none';
+}
+
+let selectedNappyType = null;
+
+function selectNappyType(type) {
+    selectedNappyType = type;
+    document.querySelectorAll('.nappy-type-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.type === type);
+    });
+}
+
+async function saveRecord() {
+    const type = document.getElementById('add-record-modal').dataset.type;
+    let data = { type };
+    
+    if (type === 'nappy') {
+        if (!selectedNappyType) {
+            alert(t('modal.select_nappy_type'));
+            return;
+        }
+        
+        data = {
+            type: 'nappy',
+            subType: selectedNappyType,
+            time: new Date().toISOString()
+        };
+        
+        await logNappy(selectedNappyType);
+    } else {
+        const startDate = document.getElementById('start-date').value;
+        const startTime = document.getElementById('start-time').value;
+        const endDate = document.getElementById('end-date').value;
+        const endTime = document.getElementById('end-time').value;
+        
+        const startDateTime = new Date(`${startDate}T${startTime}`);
+        const endDateTime = new Date(`${endDate}T${endTime}`);
+        
+        if (endDateTime <= startDateTime) {
+            alert(t('modal.invalid_time_range'));
+            return;
+        }
+        
+        data = {
+            type,
+            startTime: startDateTime.toISOString(),
+            endTime: endDateTime.toISOString(),
+            duration: endDateTime - startDateTime,
+            pausedTime: 0
+        };
+        
+        if (type === 'bottlefeeding') {
+            const amount = parseInt(document.getElementById('milk-amount').value);
+            if (isNaN(amount) || amount < 30 || amount > 500) {
+                alert(t('modal.invalid_milk_amount'));
+                return;
+            }
+            data.milkAmount = amount;
+        }
+        
+        await fetch('api.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+    }
+    
+    await updateTimeline();
+    await updateLastActivities();
+    hideAddRecordModal();
+}
+
+// Pridáme event listener pre zatvorenie modalu pri kliknutí mimo obsahu
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('add-record-modal');
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            hideAddRecordModal();
+        }
+    });
+});

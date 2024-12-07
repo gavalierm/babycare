@@ -12,6 +12,8 @@
     --color-sleep: #0027ff;
     --color-nappy-pee: #FFD700;
     --color-nappy-poop: #8B4513;
+    --color-pause: #ff9500;
+    --color-play: #34c759;
 }
 
 /* Base styles */
@@ -453,4 +455,232 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
 /* Zobrazíme active-timer len keď má triedu show */
 .active-timer.show {
     display: flex;
+}
+
+/* Control Buttons */
+.pause-btn i.fa-pause {
+    color: var(--color-pause);
+}
+
+.pause-btn i.fa-play {
+    color: var(--color-play);
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+    align-items: flex-end;
+    cursor: pointer;
+}
+
+.modal-content {
+    background: #2c2c2e;
+    border-radius: 12px 12px 0 0;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 1rem)) 1rem;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    cursor: default;
+}
+
+.modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-size: 1rem;
+}
+
+.time-field {
+    margin-bottom: 1rem;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+}
+
+.nappy-type-btn {
+    flex: 1;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.nappy-type-btn.selected {
+    border-color: var(--color-bottlefeeding);
+    background: rgba(0, 216, 255, 0.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Modal action buttons */
+.modal-actions .control-btn:last-child {
+    background: var(--color-bottlefeeding);
+    color: #000;
+}
+
+/* Add Button */
+.add-btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    aspect-ratio: 1 !important;
+    padding: 0 !important;
+    border-radius: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: unset !important;
+    flex: 0 0 3.25rem !important;  /* flex: none | none | width */
+}
+
+.add-btn i {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+/* Control Button States */
+.type-controls:not(.active-task) .stop-btn,
+.type-controls:not(.active-task) .pause-btn {
+    display: none;
+}
+
+.type-controls.active-task .begin-btn,
+.type-controls.active-task .add-btn {
+    display: none;
+}
+
+/* Modal action buttons */
+.modal[data-type="breastfeeding"] .modal-actions .control-btn:last-child {
+    background: var(--color-breastfeeding);
+    color: #fff;
+}
+
+.modal[data-type="bottlefeeding"] .modal-actions .control-btn:last-child {
+    background: var(--color-bottlefeeding);
+    color: #000;
+}
+
+.modal[data-type="sleep"] .modal-actions .control-btn:last-child {
+    background: var(--color-sleep);
+    color: #fff;
+}
+
+.modal[data-type="nappy"] .modal-actions .control-btn:last-child {
+    background: var(--color-nappy-pee);
+    color: #000;
+}
+
+/* Modal action buttons */
+.modal-actions .control-btn:first-child {
+    aspect-ratio: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 3.25rem;
+}
+
+.modal-actions .control-btn:first-child i {
+    font-size: 1.2rem;
+}
+
+.modal-subtitle {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 0.3rem;
+}
+
+.modal-type {
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Modal type colors */
+.modal[data-type="breastfeeding"] .modal-type {
+    color: var(--color-breastfeeding);
+}
+
+.modal[data-type="bottlefeeding"] .modal-type {
+    color: var(--color-bottlefeeding);
+}
+
+.modal[data-type="sleep"] .modal-type {
+    color: var(--color-sleep);
+}
+
+.modal[data-type="nappy"] .modal-type {
+    color: var(--color-nappy-pee);
+}
+
+/* DateTime inputs */
+.datetime-inputs {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.date-input {
+    flex: 3;
+}
+
+.time-input {
+    flex: 2;
+}
+
+.datetime-inputs input {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.5px;
+}
+
+/* Bottle feeding input */
+.type-bottlefeeding .controls .milk-amount {
+    flex: 0.7;  /* Menšia šírka ako ostatné tlačidlá (ktoré majú flex: 1) */
+}
+
+.type-bottlefeeding .controls .begin-btn {
+    flex: 1.3;  /* Väčšia šírka ako milk-amount input */
 }
