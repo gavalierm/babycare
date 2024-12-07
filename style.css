@@ -133,7 +133,7 @@ button {
     border-radius: 8px;
     flex: 1;
     margin: 0 4px;
-    color: #8e8e93;
+    color: #ffffff;
     transition: all 0.2s;
     padding: 0.5rem;
     display: flex;
@@ -292,6 +292,9 @@ button.soothing { background: #0027ff !important; color: #ffffff !important; }
 
 .mini-timeline-item.active {
     visibility: visible;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 20px #ffffff;
+    animation: pulseBorder 2s infinite ease-in-out;
 }
 
 .timeline-label {
@@ -340,15 +343,39 @@ button.soothing { background: #0027ff !important; color: #ffffff !important; }
     order: -1;  /* Presunie na začiatok flex kontajnera */
 }
 
-.pulse-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #30d158;
-    box-shadow: 0 0 10px #30d158;
-    animation: pulse 2s infinite ease-in-out;
+/* Pridáme štýl pre disabled nav buttons */
+.nav-button.disabled {
+    opacity: 0.4;
+    pointer-events: none;
 }
 
+/* Bottom bar - aktívne tlačidlá podľa typu */
+.nav-button.active[onclick*="breastfeeding"] {
+    color: #ffffff !important;
+    background: #5e5ce6 !important;
+}
+
+.nav-button.active[onclick*="bottlefeeding"] {
+    color: #000000 !important;
+    background: #00d8ff !important;
+}
+
+.nav-button.active[onclick*="soothing"] {
+    color: #ffffff !important;
+    background: #0027ff !important;
+}
+
+.nav-button.active[onclick*="nappy"] {
+    color: #000000 !important;
+    background: #FFD700 !important;
+}
+
+.nav-button.active[onclick*="statistics"] {
+    color: #000000 !important;
+    background: #ffffff !important;
+}
+
+/* Animácia pre pulzujúci border */
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -364,39 +391,71 @@ button.soothing { background: #0027ff !important; color: #ffffff !important; }
     }
 }
 
-/* Pridáme štýl pre disabled nav buttons */
-.nav-button.disabled {
-    opacity: 0.5;
-    pointer-events: none;
+/* Aktívne mini-timeline itemy pre každý typ */
+.mini-timeline-item.active.breastfeeding {
+    visibility: visible;
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px #5e5ce6;
+    animation: pulseBorderBreastfeeding 2s infinite ease-in-out;
 }
 
-/* Bottom bar - aktívne tlačidlá podľa typu */
-.nav-button.active[onclick*="breastfeeding"] {
-    color: #ffffff;
-    background: #5e5ce6;
+.mini-timeline-item.active.bottlefeeding {
+    visibility: visible;
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px #00d8ff;
+    animation: pulseBorderBottlefeeding 2s infinite ease-in-out;
 }
 
-.nav-button.active[onclick*="bottlefeeding"] {
-    color: #000000;
-    background: #00d8ff;
+.mini-timeline-item.active.soothing {
+    visibility: visible;
+    border: 0.5px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 20px #0027ff;
+    animation: pulseBorderSoothing 2s infinite ease-in-out;
 }
 
-.nav-button.active[onclick*="soothing"] {
-    color: #ffffff;
-    background: #0027ff;
+/* Animácie pre každý typ - len box-shadow pulzuje */
+@keyframes pulseBorderBreastfeeding {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(94, 92, 230, 1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(94, 92, 230, 0.2);
+    }
 }
 
-.nav-button.active[onclick*="nappy"] {
-    color: #000000;
-    background: #FFD700;
+@keyframes pulseBorderBottlefeeding {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 216, 255, 1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 216, 255, 0.2);
+    }
 }
 
-.nav-button.active[onclick*="statistics"] {
+@keyframes pulseBorderSoothing {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 39, 255, 1);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 39, 255, 0.2);
+    }
+}
+
+/* Pridáme nové pravidlá pre aktívny časovač v bottom bare */
+.nav-button[onclick*="statistics"].active {
     color: #000000;
     background: #ffffff;
 }
 
-/* Odstránim pôvodné pravidlo */
-.nav-button.active {
-    /* background: #2c2c2e; - už nepotrebujeme */
+/* Špeciálne stavy pre bežiaci časovač */
+.nav-button:not(.active).timer-running[onclick*="breastfeeding"] {
+    color: #5e5ce6 !important;
+}
+
+.nav-button:not(.active).timer-running[onclick*="bottlefeeding"] {
+    color: #00d8ff !important;
+}
+
+.nav-button:not(.active).timer-running[onclick*="soothing"] {
+    color: #0027ff !important;
 }

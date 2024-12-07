@@ -102,6 +102,16 @@ function initDatabase() {
             ");
         }
         
+        $db->exec('
+            CREATE TABLE IF NOT EXISTS active_timer (
+                id INTEGER PRIMARY KEY,
+                task_type TEXT,
+                start_time TEXT,
+                pause_time TEXT,
+                total_paused_time INTEGER
+            )
+        ');
+        
         return $db;
     } catch (Exception $e) {
         echo json_encode(['error' => 'Database initialization failed', 'data' => []]);
@@ -120,6 +130,19 @@ try {
     switch ($method) {
         case 'GET':
             $type = $_GET['type'] ?? null;
+            $action = $_GET['action'] ?? null;
+            
+            if ($action === 'active-timer') {
+                // Vrátime aktívny časovač
+                $stmt = $db->prepare('
+                    SELECT * FROM active_timer 
+                    WHERE id = 1
+                ');
+                $result = $stmt->execute();
+                $timer = $result->fetchArray(SQLITE3_ASSOC);
+                $response['data'] = $timer ?? null;
+                break;
+            }
             
             if ($type === '') {  // Prázdny parameter
                 throw new InvalidArgumentException('Type parameter cannot be empty');
@@ -176,6 +199,33 @@ try {
             // Kontrola vstupných dát
             if (!$input) {
                 throw new Exception('Invalid input data');
+            }
+            
+            $action = $_GET['action'] ?? null;
+            
+            if ($action === 'active-timer') {
+                if ($input['taskType'] === null) {
+                    // Vymažeme aktívny časovač
+                    $stmt = $db->prepare('DELETE FROM active_timer WHERE id = 1');
+                } else {
+                    // Uložíme aktívny časovač
+                    $stmt = $db->prepare('
+                        INSERT OR REPLACE INTO active_timer (
+                            id, task_type, start_time, pause_time, total_paused_time
+                        ) VALUES (
+                            1, :type, :startTime, :pauseTime, :totalPausedTime
+                        )
+                    ');
+                    
+                    $stmt->bindValue(':type', $input['taskType'], SQLITE3_TEXT);
+                    $stmt->bindValue(':startTime', $input['startTime'], SQLITE3_TEXT);
+                    $stmt->bindValue(':pauseTime', $input['pauseTime'], SQLITE3_TEXT);
+                    $stmt->bindValue(':totalPausedTime', $input['totalPausedTime'], SQLITE3_INTEGER);
+                }
+                
+                $result = $stmt->execute();
+                $response['success'] = true;
+                break;
             }
             
             if ($input['type'] === 'nappy') {

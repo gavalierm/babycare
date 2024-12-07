@@ -41,15 +41,35 @@ const templates = {
 };
 
 function showScreen(screenId) {
+    // Ak opúšťame aktívne okno a nie je aktívny časovač, vyčistíme timer
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+        const currentId = currentScreen.id.replace('-screen', '');
+        if (!activeTask && currentId !== screenId) {
+            const timerEl = document.getElementById(`${currentId}-timer`);
+            if (timerEl) timerEl.textContent = '...';
+        }
+    }
+    
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
     });
     document.getElementById(`${screenId}-screen`).classList.add('active');
     
+    // Odstránime všetky aktívne stavy a timer-running
     document.querySelectorAll('.nav-button').forEach(btn => {
-        btn.classList.remove('active');
+        btn.classList.remove('active', 'timer-running');
     });
-    document.querySelector(`[onclick="showScreen('${screenId}')"]`).classList.add('active');
+    
+    // Nastavíme aktívne tlačidlo
+    const activeButton = document.querySelector(`[onclick="showScreen('${screenId}')"]`);
+    activeButton.classList.add('active');
+    
+    // Ak je aktívny časovač a sme v Log okne, zvýrazníme tlačidlo s časovačom
+    if (screenId === 'statistics' && activeTask) {
+        const timerButton = document.querySelector(`[onclick="showScreen('${activeTask}')"]`);
+        timerButton.classList.add('timer-running');
+    }
 }
 
 function formatTime(ms) {
@@ -69,15 +89,17 @@ function formatTimeForDisplay(ms, showLabels = true) {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
+    const remainingSeconds = seconds % 60;
     
     if (seconds < 60) {
         return showLabels ? `${seconds} seconds` : seconds.toString();
     }
+    
+    const time = `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
     if (hours > 0) {
-        const time = `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
         return showLabels ? `${time} minutes` : time;
     }
-    return showLabels ? `${minutes} minutes` : minutes.toString();
+    return showLabels ? `${time} minutes` : time;
 }
 
 function formatTimeRange(startTime, endTime) {
@@ -165,9 +187,20 @@ function updateTimer(taskType) {
 
 function disableScreenSwitching(activeType) {
     document.querySelectorAll('.nav-button').forEach(btn => {
-        btn.style.pointerEvents = 'none';  // Vypneme pointer-events pre všetky tlačidlá
-        if (!btn.getAttribute('onclick').includes(activeType)) {
+        // Ak je to Log tlačidlo (statistics) alebo aktívne okno, nechaj ho aktívne
+        if (btn.getAttribute('onclick').includes('statistics') || btn.getAttribute('onclick').includes(activeType)) {
+            btn.style.pointerEvents = '';  // Povolíme klikanie
+            btn.classList.remove('disabled');  // Odstránime priehľadnosť
+        } else {
+            btn.style.pointerEvents = 'none';  // Vypneme pointer-events pre ostatné tlačidlá
             btn.classList.add('disabled');  // Opacity len pre neaktívne tlačidlá
+        }
+
+        // Nastavíme timer-running pre tlačidlo aktívneho časovača
+        if (btn.getAttribute('onclick').includes(activeType)) {
+            btn.classList.add('timer-running');
+        } else {
+            btn.classList.remove('timer-running');
         }
     });
 }
@@ -175,9 +208,131 @@ function disableScreenSwitching(activeType) {
 function enableScreenSwitching() {
     document.querySelectorAll('.nav-button').forEach(btn => {
         btn.style.pointerEvents = '';  // Zapneme pointer-events pre všetky tlačidlá
-        btn.classList.remove('disabled');
+        btn.classList.remove('disabled', 'timer-running');  // Odstránime všetky špeciálne stavy
     });
 }
+
+async function saveActiveTimer() {
+    if (activeTask && startTime) {
+        try {
+            await fetch('api.php?action=active-timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    taskType: activeTask,
+                    startTime: startTime.toISOString(),
+                    pauseTime: pauseTime ? pauseTime.toISOString() : null,
+                    totalPausedTime: totalPausedTime
+                })
+            });
+        } catch (error) {
+            console.error('Failed to save timer state:', error);
+        }
+    }
+}
+
+async function loadActiveTimer(isInitialLoad = true) {
+    try {
+        const response = await fetch('api.php?action=active-timer');
+        const data = await response.json();
+        const timer = data.data;
+        
+        if (timer) {
+            activeTask = timer.task_type;
+            startTime = new Date(timer.start_time);
+            pauseTime = timer.pause_time ? new Date(timer.pause_time) : null;
+            totalPausedTime = timer.total_paused_time;
+
+            const taskType = activeTask;
+            
+            if (isInitialLoad) {
+                showScreen(taskType);
+            }
+            
+            const startBtn = document.getElementById(`${taskType}-start`);
+            const stopBtn = document.getElementById(`${taskType}-stop`);
+            const pauseBtn = document.getElementById(`${taskType}-pause`);
+            const timerEl = document.getElementById(`${taskType}-timer`);
+            
+            startBtn.classList.remove('visible');
+            stopBtn.classList.add('visible');
+            pauseBtn.classList.add('visible');
+            pauseBtn.textContent = pauseTime ? 'Resume' : 'Pause';
+            
+            // Vypočítame presný čas na základe startTime a totalPausedTime
+            const currentTime = new Date();
+            const elapsed = pauseTime ? 
+                pauseTime - startTime - totalPausedTime : 
+                currentTime - startTime - totalPausedTime;
+            
+            // Okamžite nastavíme správny čas
+            timerEl.textContent = formatTimeForDisplay(elapsed, false);
+            
+            disableScreenSwitching(taskType);
+            
+            // Interval aktualizuje len lokálny čas
+            if (!pauseTime) {
+                clearInterval(timerInterval);  // Vyčistíme starý interval
+                updateTimer(taskType);
+                timerInterval = setInterval(() => updateTimer(taskType), 1000);
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load timer state:', error);
+    }
+}
+
+// Pridáme polling pre synchronizáciu
+let lastTimerCheck = null;
+
+async function checkTimerUpdates() {
+    try {
+        const response = await fetch('api.php?action=active-timer');
+        const data = await response.json();
+        const timer = data.data;
+        
+        if (timer) {
+            const timerJson = JSON.stringify(timer);
+            if (timerJson !== lastTimerCheck) {
+                lastTimerCheck = timerJson;
+                await loadActiveTimer(false);
+            }
+        } else if (lastTimerCheck !== null) {
+            lastTimerCheck = null;
+            // Vyčistíme stav časovača
+            activeTask = null;
+            startTime = null;
+            pauseTime = null;
+            totalPausedTime = 0;
+            clearInterval(timerInterval);
+            
+            // Resetujeme tlačidlá pre všetky typy aktivít
+            ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(type => {
+                const startBtn = document.getElementById(`${type}-start`);
+                const stopBtn = document.getElementById(`${type}-stop`);
+                const pauseBtn = document.getElementById(`${type}-pause`);
+                
+                if (startBtn) startBtn.classList.add('visible');
+                if (stopBtn) stopBtn.classList.remove('visible');
+                if (pauseBtn) pauseBtn.classList.remove('visible');
+            });
+            
+            // Povolíme prepínanie okien
+            enableScreenSwitching();
+            
+            // Aktualizujeme UI bez vymazania časovača
+            await updateRecentActivities();
+            await updateTimeline();
+        }
+    } catch (error) {
+        console.error('Failed to check timer updates:', error);
+    }
+}
+
+// Vrátime polling na 5 sekúnd
+setInterval(checkTimerUpdates, 5000);
 
 function startTask(taskType) {
     if (activeTask) return;
@@ -199,6 +354,8 @@ function startTask(taskType) {
     
     updateTimer(taskType);
     timerInterval = setInterval(() => updateTimer(taskType), 1000);
+    
+    saveActiveTimer();  // Uložíme stav časovača
 }
 
 function pauseTask(taskType) {
@@ -219,6 +376,8 @@ function pauseTask(taskType) {
         pauseBtn.textContent = 'Resume';
         startBtn.classList.remove('visible');
     }
+    
+    saveActiveTimer();  // Uložíme stav časovača
 }
 
 async function stopTask(taskType) {
@@ -229,6 +388,21 @@ async function stopTask(taskType) {
     const duration = endTime - startTime - totalPausedTime;
     
     try {
+        // Najprv vymažeme aktívny časovač z databázy
+        await fetch('api.php?action=active-timer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                taskType: null,
+                startTime: null,
+                pauseTime: null,
+                totalPausedTime: 0
+            })
+        });
+
+        // Potom uložíme aktivitu do histórie
         const response = await fetch('api.php', {
             method: 'POST',
             headers: {
@@ -253,7 +427,8 @@ async function stopTask(taskType) {
         startBtn.classList.add('visible');
         stopBtn.classList.remove('visible');
         pauseBtn.classList.remove('visible');
-        timerEl.textContent = '...';
+        // Zachováme posledný čas v timeri
+        timerEl.textContent = formatTimeForDisplay(duration, false);
         
         activeTask = null;
         startTime = null;
@@ -439,13 +614,27 @@ async function updateTimeline() {
     timelineEl.appendChild(fragment);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(taskType => {
         document.getElementById(`${taskType}-start`).onclick = () => startTask(taskType);
         document.getElementById(`${taskType}-stop`).onclick = () => stopTask(taskType);
         document.getElementById(`${taskType}-pause`).onclick = () => pauseTask(taskType);
     });
 
+    // Najprv načítame aktívny časovač
+    await loadActiveTimer();
+    
+    // Ak nie je aktívny časovač, až potom zobrazíme default okno
+    if (!activeTask) {
+        showScreen('breastfeeding');
+    }
+    
     updateTimeline();
     updateRecentActivities();
+});
+
+window.addEventListener('storage', (e) => {
+    if (e.key === 'activeTimer') {
+        loadActiveTimer();  // Znovu načítame timer pri zmene v inom okne
+    }
 });
