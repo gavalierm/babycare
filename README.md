@@ -1,53 +1,79 @@
 # Baby Care Tracker
 
-A Progressive Web App for tracking baby's daily activities including feeding, sleeping, and nappy changes.
+A Progressive Web App for tracking baby's daily activities with SQLite database storage.
 
 ## Features
 
 - Track multiple activities:
-  - Breast Feeding
-  - Bottle Feeding
-  - Soothing
-  - Nappy Changes (Pee/Poop)
+  - Breast Feeding (Purple)
+  - Bottle Feeding (Light Blue)
+  - Soothing (Blue)
+  - Nappy Changes (Yellow/Brown)
 - Real-time timer with pause functionality
-- Recent activities display (last 6 entries)
+- Recent activities display (last 6 entries per activity)
 - Daily log with relative dates (Today/Yesterday)
-- Offline support with network-only strategy
+- SQLite database storage via PHP API
+- Network-only service worker strategy
 - Installable as PWA
-- Local storage for data persistence
+- Color-coded activities and navigation
 
 ## Technical Details
 
-- Pure JavaScript, HTML, and CSS
-- Font Awesome icons
-- Service Worker for offline handling
-- PWA manifest for installation
-- Responsive design for mobile devices
+- Frontend:
+  - Pure JavaScript, HTML, and CSS
+  - Font Awesome icons
+  - Responsive design for mobile devices
+  - iOS safe area support
+
+- Backend:
+  - PHP 8.4 API
+  - SQLite3 database
+  - JSON communication
+  - Error handling and validation
+
+- PWA Features:
+  - Service Worker for network-only strategy
+  - Manifest for installation
+  - Version-based cache management
 
 ## Installation
 
 1. Clone the repository
-2. Serve the files using a web server
-3. Access through a browser
-4. Can be installed as PWA through browser's install option
+2. Set up a PHP 8.4+ web server
+3. Ensure SQLite3 PHP extension is enabled
+4. Deploy files to web server
+5. Set proper permissions for SQLite database directory
+6. Access through a browser
+7. Can be installed as PWA through browser's install option
 
 ## File Structure
 
 - `index.html` - Main application structure
 - `style.css` - All styling and animations
-- `script.js` - Application logic and data handling
+- `script.js` - Frontend application logic
+- `api.php` - Backend API for data handling
 - `manifest.json` - PWA configuration
-- `sw.js` - Service Worker for network-only strategy
+- `sw.js` - Service Worker with version control
+- `.htaccess` - Server security configuration
 - `icons/` - Application icons for PWA
 
-## Usage
+## API Endpoints
 
-- Select activity type from bottom navigation
-- Use Start/Stop/Pause buttons to control timer
-- View recent activities in mini-timeline
-- Check full history in Log section
-- Nappy changes can be logged with single tap
+- `GET api.php?type={activity_type}` - Get last 6 entries for specific activity
+- `GET api.php` - Get all activities from last 30 days
+- `POST api.php` - Save new activity
+
+## Security
+
+- Database file has random hash name
+- Direct database access blocked via .htaccess
+- API error handling and validation
+- CORS headers for API access
 
 ## Data Storage
 
-All data is stored locally using browser's localStorage.
+All data is stored in SQLite database with:
+- Activity type tracking
+- Timestamps for all events
+- Duration tracking for timed activities
+- Automatic database initialization
