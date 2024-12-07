@@ -29,7 +29,7 @@ const timeFormat = {
 const TASK_LABELS = {
     'breastfeeding': 'Breast Feeding',
     'bottlefeeding': 'Bottle Feeding',
-    'sleeping': 'Sleep'
+    'soothing': 'Soothing'
 };
 
 const templates = {
@@ -331,7 +331,7 @@ function updateTimeline() {
 }
 
 function updateRecentActivities() {
-    ['breastfeeding', 'bottlefeeding', 'sleeping'].forEach(type => {
+    ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(type => {
         const recentEl = document.getElementById(`${type}-recent`);
         if (!recentEl) return;
         
@@ -402,7 +402,7 @@ function updateRecentActivities() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    ['breastfeeding', 'bottlefeeding', 'sleeping'].forEach(taskType => {
+    ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(taskType => {
         document.getElementById(`${taskType}-start`).onclick = () => startTask(taskType);
         document.getElementById(`${taskType}-stop`).onclick = () => stopTask(taskType);
         document.getElementById(`${taskType}-pause`).onclick = () => pauseTask(taskType);

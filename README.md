@@ -7,7 +7,7 @@ A Progressive Web App for tracking baby's daily activities including feeding, sl
 - Track multiple activities:
   - Breast Feeding
   - Bottle Feeding
-  - Sleeping
+  - Soothing
   - Nappy Changes (Pee/Poop)
 - Real-time timer with pause functionality
 - Recent activities display (last 6 entries)
