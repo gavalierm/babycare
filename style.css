@@ -355,3 +355,9 @@ button.nappy-poop { background: #ff453a !important; color: #ffffff !important; }
         opacity: 1;
     }
 }
+
+/* Pridáme štýl pre disabled nav buttons */
+.nav-button.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}

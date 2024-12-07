@@ -64,20 +64,20 @@ function formatTimeOnly(date) {
     return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 }
 
-function formatTimeForDisplay(ms) {
+function formatTimeForDisplay(ms, showLabels = true) {
     const seconds = Math.floor(ms / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    const remainingSeconds = seconds % 60;
     
     if (seconds < 60) {
-        return `${seconds} seconds`;
+        return showLabels ? `${seconds} seconds` : seconds.toString();
     }
     if (hours > 0) {
-        return `${hours}:${String(remainingMinutes).padStart(2, '0')} minutes`;
+        const time = `${hours}:${String(remainingMinutes).padStart(2, '0')}`;
+        return showLabels ? `${time} minutes` : time;
     }
-    return `${minutes} minutes`;
+    return showLabels ? `${minutes} minutes` : minutes.toString();
 }
 
 function formatTimeRange(startTime, endTime) {
@@ -95,16 +95,26 @@ function formatDateForGrouping(date) {
 
 // Nová pomocná funkcia pre aktualizáciu obsahu slotu
 function updateSlotContent(slot, time, duration) {
-    // Ak už slot obsahuje rovnaké hodnoty, nebudeme ho aktualizovať
     const timeEl = slot.querySelector('.time');
     const durationEl = slot.querySelector('.duration');
     
-    if (timeEl.textContent === time && durationEl.textContent === duration) {
+    // Najprv skontrolujeme či elementy existujú
+    if (!timeEl || !durationEl) {
+        console.error('Missing time or duration element in slot:', slot);
+        return;
+    }
+    
+    // Pre nappy screen používame subType namiesto duration
+    const formattedDuration = typeof duration === 'string' ? 
+        duration : // Pre nappy (PEE/POOP)
+        formatTimeForDisplay(duration); // Pre ostatné aktivity
+    
+    if (timeEl.textContent === time && durationEl.textContent === formattedDuration) {
         return;
     }
     
     timeEl.textContent = time;
-    durationEl.textContent = duration;
+    durationEl.textContent = formattedDuration;
 }
 
 function updateActiveSlot(type) {
@@ -122,7 +132,7 @@ function updateActiveSlot(type) {
             activeSlot.classList.add(type);
         }
         
-        updateSlotContent(activeSlot, formatTimeOnly(startTime), formatTime(elapsed));
+        updateSlotContent(activeSlot, formatTimeOnly(startTime), elapsed);
     } else {
         activeSlot.className = 'mini-timeline-item';
     }
@@ -133,10 +143,25 @@ function updateTimer(taskType) {
     
     const timerEl = document.getElementById(`${taskType}-timer`);
     const elapsed = new Date() - startTime - totalPausedTime;
-    timerEl.textContent = formatTime(elapsed);
+    timerEl.textContent = formatTimeForDisplay(elapsed, false);  // Bez labels
     
-    // Aktualizujeme len aktívny slot
     updateActiveSlot(taskType);
+}
+
+function disableScreenSwitching(activeType) {
+    document.querySelectorAll('.nav-button').forEach(btn => {
+        btn.style.pointerEvents = 'none';  // Vypneme pointer-events pre všetky tlačidlá
+        if (!btn.getAttribute('onclick').includes(activeType)) {
+            btn.classList.add('disabled');  // Opacity len pre neaktívne tlačidlá
+        }
+    });
+}
+
+function enableScreenSwitching() {
+    document.querySelectorAll('.nav-button').forEach(btn => {
+        btn.style.pointerEvents = '';  // Zapneme pointer-events pre všetky tlačidlá
+        btn.classList.remove('disabled');
+    });
 }
 
 function startTask(taskType) {
@@ -154,6 +179,8 @@ function startTask(taskType) {
     stopBtn.classList.add('visible');
     pauseBtn.classList.add('visible');
     pauseBtn.textContent = 'Pause';
+    
+    disableScreenSwitching(taskType);
     
     updateTimer(taskType);
     timerInterval = setInterval(() => updateTimer(taskType), 1000);
@@ -186,6 +213,15 @@ function stopTask(taskType) {
     const endTime = new Date();
     const duration = endTime - startTime - totalPausedTime;
     
+    // Pridáme debug log pre kontrolu
+    console.log('Saving task:', {
+        type: taskType,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        duration: duration,
+        pausedTime: totalPausedTime
+    });
+    
     taskHistory.unshift({
         type: taskType,
         startTime: startTime.toISOString(),
@@ -202,16 +238,18 @@ function stopTask(taskType) {
     startBtn.classList.add('visible');
     stopBtn.classList.remove('visible');
     pauseBtn.classList.remove('visible');
-    timerEl.textContent = '00:00:00';
+    timerEl.textContent = '...';
     
     activeTask = null;
     startTime = null;
     pauseTime = null;
     totalPausedTime = 0;
     
+    enableScreenSwitching();
+    
+    updateRecentActivities();
     saveToLocalStorage();
     updateTimeline();
-    updateRecentActivities();
 }
 
 function logNappy(type) {
@@ -300,27 +338,31 @@ function updateRecentActivities() {
             .slice(0, 6);
             
         historyItems.forEach((task, index) => {
-            const slot = recentEl.querySelector(`[data-slot="${index + 1}"]`);
+            const slotIndex = index + 1;
+            const slot = recentEl.querySelector(`[data-slot="${slotIndex}"]`);
             if (!slot) return;
             
             updateSlotContent(
                 slot,
                 formatTimeOnly(new Date(task.startTime)),
-                formatTime(task.duration)
+                task.duration
             );
         });
         
         // Vyčistíme nepoužité sloty
         for (let i = historyItems.length + 1; i <= 6; i++) {
             const slot = recentEl.querySelector(`[data-slot="${i}"]`);
-            if (slot && slot.innerHTML !== '') {
-                slot.innerHTML = '';
+            if (slot) {
+                const timeEl = slot.querySelector('.time');
+                const durationEl = slot.querySelector('.duration');
+                if (timeEl) timeEl.textContent = '';
+                if (durationEl) durationEl.textContent = '';
                 slot.className = 'mini-timeline-item';
             }
         }
     });
 
-    // Update nappy screen
+    // Rovnaká úprava pre nappy screen
     const nappyRecentEl = document.getElementById('nappy-recent');
     if (nappyRecentEl) {
         const historyItems = taskHistory
@@ -328,7 +370,8 @@ function updateRecentActivities() {
             .slice(0, 6);
             
         historyItems.forEach((task, index) => {
-            const slot = nappyRecentEl.querySelector(`[data-slot="${index + 1}"]`);
+            const slotIndex = index + 1;
+            const slot = nappyRecentEl.querySelector(`[data-slot="${slotIndex}"]`);
             if (!slot) return;
             
             updateSlotContent(
@@ -341,8 +384,11 @@ function updateRecentActivities() {
         // Vyčistíme nepoužité sloty
         for (let i = historyItems.length + 1; i <= 6; i++) {
             const slot = nappyRecentEl.querySelector(`[data-slot="${i}"]`);
-            if (slot && slot.innerHTML !== '') {
-                slot.innerHTML = '';
+            if (slot) {
+                const timeEl = slot.querySelector('.time');
+                const durationEl = slot.querySelector('.duration');
+                if (timeEl) timeEl.textContent = '';
+                if (durationEl) durationEl.textContent = '';
                 slot.className = 'mini-timeline-item';
             }
         }
