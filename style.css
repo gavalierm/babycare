@@ -164,8 +164,8 @@ button {
 button.breastfeeding { background: #ff9f0a !important; color: #000000 !important; }
 button.bottlefeeding { background: #5e5ce6 !important; color: #ffffff !important; }
 button.sleeping { background: #30d158 !important; color: #000000 !important; }
-button.nappy-pee { background: #0a84ff !important; color: #ffffff !important; }
-button.nappy-poop { background: #ff453a !important; color: #ffffff !important; }
+button.nappy-pee { background: #FFD700 !important; color: #000000 !important; }  /* medium yellow */
+button.nappy-poop { background: #8B4513 !important; color: #ffffff !important; }  /* glossy brown */
 
 .timeline {
     position: relative;
@@ -206,11 +206,11 @@ button.nappy-poop { background: #ff453a !important; color: #ffffff !important; }
 }
 
 .timeline-dot.nappy-pee { 
-    background: #0a84ff;
+    background: #FFD700;  /* medium yellow */
 }
 
 .timeline-dot.nappy-poop { 
-    background: #ff453a;
+    background: #8B4513;  /* glossy brown */
 }
 
 .timeline-info {

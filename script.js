@@ -98,23 +98,21 @@ function updateSlotContent(slot, time, duration) {
     const timeEl = slot.querySelector('.time');
     const durationEl = slot.querySelector('.duration');
     
-    // Najprv skontrolujeme či elementy existujú
     if (!timeEl || !durationEl) {
-        console.error('Missing time or duration element in slot:', slot);
         return;
     }
     
     // Pre nappy screen používame subType namiesto duration
     const formattedDuration = typeof duration === 'string' ? 
-        duration : // Pre nappy (PEE/POOP)
+        duration === 'POOP' ? '<i class="fas fa-poo"></i>' : '<i class="fa-solid fa-water"></i>' : // Pre nappy
         formatTimeForDisplay(duration); // Pre ostatné aktivity
     
-    if (timeEl.textContent === time && durationEl.textContent === formattedDuration) {
+    if (timeEl.textContent === time && durationEl.innerHTML === formattedDuration) {
         return;
     }
     
     timeEl.textContent = time;
-    durationEl.textContent = formattedDuration;
+    durationEl.innerHTML = formattedDuration;  // Použijeme innerHTML pre ikony
 }
 
 function updateActiveSlot(type) {
@@ -213,15 +211,6 @@ function stopTask(taskType) {
     const endTime = new Date();
     const duration = endTime - startTime - totalPausedTime;
     
-    // Pridáme debug log pre kontrolu
-    console.log('Saving task:', {
-        type: taskType,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        duration: duration,
-        pausedTime: totalPausedTime
-    });
-    
     taskHistory.unshift({
         type: taskType,
         startTime: startTime.toISOString(),
@@ -275,7 +264,7 @@ function createTimelineItem(task) {
     
     if (task.type === 'nappy') {
         item.querySelector('.timeline-dot').classList.add(`nappy-${task.subType}`);
-        item.querySelector('strong').textContent = `Nappy Change (${task.subType.toUpperCase()})`;
+        item.querySelector('strong').textContent = `Nappy Change (${task.subType === 'poop' ? '💩' : 'PEE'})`;
         item.querySelector('.time').textContent = formatTimeOnly(new Date(task.time));
     } else {
         item.querySelector('.timeline-dot').classList.add(task.type);
@@ -362,13 +351,13 @@ function updateRecentActivities() {
         }
     });
 
-    // Rovnaká úprava pre nappy screen
+    // Update nappy screen
     const nappyRecentEl = document.getElementById('nappy-recent');
     if (nappyRecentEl) {
         const historyItems = taskHistory
             .filter(task => task.type === 'nappy')
             .slice(0, 6);
-            
+        
         historyItems.forEach((task, index) => {
             const slotIndex = index + 1;
             const slot = nappyRecentEl.querySelector(`[data-slot="${slotIndex}"]`);
