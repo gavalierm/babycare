@@ -192,22 +192,47 @@ function updateActiveTaskDisplay() {
     }
 }
 
-// Pridám novú pomocn�� funkciu pre relatívny čas
+// Pridám novú pomocnú funkciu pre relatívny čas
 function formatRelativeTime(date) {
     const now = new Date();
-    const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+    const diffInSeconds = Math.floor((now - date) / 1000);
     
-    if (diffInMinutes < 1) return { value: t('time.just_now'), label: '' };
-    if (diffInMinutes === 1) return { value: '1', label: t('relative_time.minute') };
-    if (diffInMinutes < 5) return { value: diffInMinutes, label: t('relative_time.minutes_2_4') };
-    if (diffInMinutes < 60) return { value: diffInMinutes, label: t('relative_time.minutes') };
+    // Menej ako minúta - zobrazíme sekundy
+    if (diffInSeconds < 60) {
+        if (diffInSeconds === 1) return { value: '1', label: t('relative_time.second') };
+        if (diffInSeconds < 5) return { value: diffInSeconds, label: t('relative_time.seconds_2_4') };
+        return { value: diffInSeconds, label: t('relative_time.seconds') };
+    }
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    
+    // Menej ako hodina - zobrazíme MM:SS minút
+    if (diffInMinutes < 60) {
+        const remainingSeconds = diffInSeconds % 60;
+        const time = `${diffInMinutes}:${String(remainingSeconds).padStart(2, '0')}`;
+        
+        if (diffInMinutes === 1) return { value: time, label: t('relative_time.minute') };
+        if (diffInMinutes < 5) return { value: time, label: t('relative_time.minutes_2_4') };
+        return { value: time, label: t('relative_time.minutes') };
+    }
     
     const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours === 1) return { value: '1', label: t('relative_time.hour') };
-    if (diffInHours < 5) return { value: diffInHours, label: t('relative_time.hours_2_4') };
-    if (diffInHours < 24) return { value: diffInHours, label: t('relative_time.hours') };
     
-    return { value: formatTimeOnly(date), label: t('time.time') };
+    // Menej ako deň - zobrazíme HH:MM hodín
+    if (diffInHours < 24) {
+        const remainingMinutes = diffInMinutes % 60;
+        const time = `${diffInHours}:${String(remainingMinutes).padStart(2, '0')}`;
+        
+        if (diffInHours === 1) return { value: time, label: t('relative_time.hour') };
+        if (diffInHours < 5) return { value: time, label: t('relative_time.hours_2_4') };
+        return { value: time, label: t('relative_time.hours') };
+    }
+    
+    // Viac ako deň - zobrazíme DD dní
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return { value: '1', label: t('relative_time.day') };
+    if (diffInDays < 5) return { value: diffInDays, label: t('relative_time.days_2_4') };
+    return { value: diffInDays, label: t('relative_time.days') };
 }
 
 // Timeline funkcie
@@ -238,6 +263,7 @@ function createTimelineItem(task) {
     const durationEl = item.querySelector('.duration');
     const relativeTime = formatRelativeTime(taskTime);
     
+    // Zobrazíme čas a relatívny čas s labelom
     timeEl.textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value} ${relativeTime.label}`;
     
     if (task.type === 'nappy') {

@@ -29,7 +29,10 @@
             "hours_2_4": "hodiny",
             "second": "sekunda",
             "seconds": "sekúnd",
-            "seconds_2_4": "sekundy"
+            "seconds_2_4": "sekundy",
+            "day": "deň",
+            "days": "dní",
+            "days_2_4": "dni"
         },
         "relative_time": {
             "minute": "minútou",
@@ -40,7 +43,10 @@
             "hours_2_4": "hodinami",
             "second": "sekundou",
             "seconds": "sekundami",
-            "seconds_2_4": "sekundami"
+            "seconds_2_4": "sekundami",
+            "day": "dňom",
+            "days": "dňami",
+            "days_2_4": "dňami"
         },
         "activities": {
             "breastfeeding": "Dojčenie",
