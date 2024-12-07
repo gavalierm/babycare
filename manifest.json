@@ -1,7 +1,7 @@
 {
     "name": "Baby Care Tracker",
     "short_name": "Baby Care",
-    "version": "3.3.1",
+    "version": "3.3.4",
     "description": "Track your baby's daily activities with real-time synchronization",
     "start_url": "/",
     "display": "standalone",

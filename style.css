@@ -1,9 +1,11 @@
+/* Reset */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+/* Variables */
 :root {
     --color-breastfeeding: #5e5ce6;
     --color-bottlefeeding: #00d8ff;
@@ -12,6 +14,7 @@
     --color-nappy-poop: #8B4513;
 }
 
+/* Base styles */
 body {
     font-family: -apple-system, BlinkMacSystemFont, sans-serif;
     line-height: 1.4;
@@ -22,6 +25,7 @@ body {
     overflow: hidden;
 }
 
+/* Layout */
 .app-container {
     display: flex;
     flex-direction: column;
@@ -37,6 +41,7 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Stage Title */
 .stage-title {
     font-size: 1.5rem;
     font-weight: 600;
@@ -46,12 +51,7 @@ body {
     text-transform: capitalize;
 }
 
-/* Farby nadpisu podľa typu */
-body.type-breastfeeding .stage-title { color: var(--color-breastfeeding); }
-body.type-bottlefeeding .stage-title { color: var(--color-bottlefeeding); }
-body.type-sleep .stage-title { color: var(--color-sleep); }
-body.type-nappy .stage-title { color: var(--color-nappy-pee); }
-
+/* Navigation */
 .type-selector {
     display: flex;
     gap: 0.5rem;
@@ -80,7 +80,7 @@ body.type-nappy .stage-title { color: var(--color-nappy-pee); }
     justify-content: center;
     gap: 0.2rem;
     color: #ffffff;
-    opacity: 0.6;
+    opacity: 0.8;
     transition: all 0.2s ease;
 }
 
@@ -93,30 +93,132 @@ body.type-nappy .stage-title { color: var(--color-nappy-pee); }
     font-weight: 500;
 }
 
+/* Last Activity - základné štýly */
 .last-activity {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    font-weight: normal;
-    text-align: center;
     display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
+    justify-content: center;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    text-align: center;
+    align-items: baseline;
 }
 
-.last-activity .label {
+.nav-item .last-activity .label,
+.nav-item .last-activity .time {
+    flex: 1 0 100%;  /* Full width v column layoute */
+}
+
+.nav-item .last-activity .label {
     font-size: 0.75rem;
     opacity: 0.7;
     order: 1;
 }
 
-.last-activity .time {
+.nav-item .last-activity .time {
     font-size: 1rem;
     font-weight: 500;
     opacity: 1;
     order: 2;
 }
 
-/* Active States */
+/* Type Controls */
+.type-controls {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Active Timer */
+.active-timer {
+    display: none;
+    background: rgba(44, 44, 46, 0.8);
+    border-radius: 12px;
+    padding: 1.5rem;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 2rem;
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    color: rgba(255, 255, 255, 1);
+    font-size: 1.28rem;
+    gap: 1rem;
+}
+
+.active-timer .time::before,
+.active-timer .duration::before {
+    content: '--:--';
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.active-timer .time:not(:empty)::before,
+.active-timer .duration:not(:empty)::before {
+    display: none;
+}
+
+.active-timer .parameter {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.8);
+    flex: 1;
+    text-align: center;
+    visibility: hidden;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: 0.8rem;
+    padding: 1rem;
+}
+
+/* Control Buttons */
+.control-btn {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    height: 3.25rem;
+    min-height: 50px;
+    padding: 1rem;
+    border-radius: 25px;
+    border: 2px solid transparent;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    flex: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-transform: capitalize;
+    background: #3a3a3c;
+    color: #ffffff;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.control-btn i {
+    font-size: 1.4rem;
+    line-height: 1;
+}
+
+.control-btn:has(i) {
+    padding: 0.8rem;
+}
+
+/* Control Button States */
+.type-controls:not(.active-task) .stop-btn,
+.type-controls:not(.active-task) .pause-btn {
+    display: none;
+}
+
+.type-controls.active-task .begin-btn {
+    display: none;
+}
+
+/* Type-specific Colors */
+body.type-breastfeeding .stage-title { color: var(--color-breastfeeding); }
+body.type-bottlefeeding .stage-title { color: var(--color-bottlefeeding); }
+body.type-sleep .stage-title { color: var(--color-sleep); }
+body.type-nappy .stage-title { color: var(--color-nappy-pee); }
+
 body.type-breastfeeding .nav-button[onclick*="breastfeeding"] {
     background: var(--color-breastfeeding);
     opacity: 1;
@@ -139,100 +241,64 @@ body.type-nappy .nav-button[onclick*="nappy"] {
     opacity: 1;
 }
 
-.active-timer {
-    background: rgba(44, 44, 46, 0.8);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
+/* Type-specific Controls */
+.type-breastfeeding .begin-btn { background: var(--color-breastfeeding); }
+.type-bottlefeeding .begin-btn { background: var(--color-bottlefeeding); color: #000000; }
+.type-sleep .begin-btn { background: var(--color-sleep); }
+
+.stop-btn { background: #ff453a !important; }
+.pause-btn { background: #3a3a3c !important; }
+
+/* Type-specific Visibility */
+body.type-breastfeeding .type-controls.type-breastfeeding,
+body.type-bottlefeeding .type-controls.type-bottlefeeding,
+body.type-sleep .type-controls.type-sleep,
+body.type-nappy .type-controls.type-nappy {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 2rem;
-    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
-    color: rgba(255, 255, 255, 1);
-    font-size: 1.28rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
 }
 
-.active-timer .time::before {
-    content: '--:--';
-    color: rgba(255, 255, 255, 0.4);
+body.type-bottlefeeding .active-timer .parameter {
+    visibility: visible;
 }
 
-.active-timer .duration::before {
-    content: '--:--';
-    color: rgba(255, 255, 255, 0.4);
-}
-
-.active-timer .time:not(:empty)::before,
-.active-timer .duration:not(:empty)::before {
+/* Nappy Controls */
+.nappy-control {
     display: none;
 }
 
-.controls {
-    display: flex;
-    gap: 0.8rem;
-    padding: 0 1rem;
+body.type-nappy .nappy-control {
+    display: block;
 }
 
-.controls button,
-button.nappy-pee,
-button.nappy-poop {
-    min-height: 50px;
-    padding: 1rem;
-    border-radius: 25px;
-    border: none;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    flex: 1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    text-transform: capitalize;
-}
-
-#begin-btn {
-    background: var(--color-breastfeeding);
-    color: #ffffff;
-}
-
-.stop-btn {
-    background: #ff453a !important;
-    color: #ffffff !important;
-}
-
-.pause-btn {
-    background: #3a3a3c !important;
-    color: #ffffff !important;
-}
-
-button.nappy-pee {
+.nappy-control[data-type="pee"] {
     background: var(--color-nappy-pee);
     color: #000000;
 }
 
-button.nappy-poop {
+.nappy-control[data-type="poop"] {
     background: var(--color-nappy-poop);
-    color: #ffffff;
 }
 
-.log-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: #1c1c1e;
-    min-height: 0;
+/* Milk Amount Input */
+.milk-amount {
+    text-align: center;
+    cursor: text;
 }
 
-.log-scroll-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 1rem;
+.milk-amount:focus {
+    outline: none;
+    background: #4a4a4c;
 }
 
+.milk-amount.invalid {
+    border-color: #ff453a;
+}
+
+.milk-amount.hidden {
+    display: none !important;
+}
+
+/* Timeline */
 .timeline-item {
     background: rgba(44, 44, 46, 0.8);
     border-radius: 10px;
@@ -261,30 +327,48 @@ button.nappy-poop {
 }
 
 .timeline-date {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     font-size: 1.2rem;
     color: rgba(255, 255, 255, 0.85);
-    margin-bottom: 1rem;
     font-weight: 500;
     text-transform: capitalize;
+    background: #1c1c1e;
+    padding: 1rem ;
+    padding-top: 0.4rem;;
 }
 
-.nav-button:not([onclick*="statistics"]):not([onclick*="active"]) {
-    opacity: 0.4;
+.timeline-item i {
+    font-size: 1.8rem;
+    flex: 1;
+    text-align: center;
 }
 
-.nav-button.active {
-    opacity: 1;
+.timeline-info-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    text-transform: lowercase;
 }
 
-.controls button:not(.visible) {
-    display: none;
+.timeline-day-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
 }
 
-@keyframes pulseBorder {
-    0%, 100% { box-shadow: 0 0 20px rgba(255, 255, 255, 1); }
-    50% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+/* Duration ikona pre nappy */
+.timeline-info-details .duration i {
+    font-size: 0.9rem;  /* Rovnaká veľkosť ako text */
+    
+    color: inherit !important;
 }
 
+/* Safe Area Support */
 @supports (padding: max(0px)) {
     .stage-panel {
         padding-top: max(1rem, env(safe-area-inset-top));
@@ -299,110 +383,74 @@ button.nappy-poop {
     }
 }
 
-.nappy-control {
-    display: none;
-}
-
-body.type-nappy .nappy-control {
-    display: block;
-}
-
-body.type-nappy #begin-btn,
-body.type-nappy #end-btn,
-body.type-nappy #pause-btn {
-    display: none;
-}
-
-.nappy-control i {
-    font-size: 1.4rem;
-}
-
-button.nappy-pee i {
-    color: #000000;
-}
-
-button.nappy-poop i {
-    color: #ffffff;
-}
-
-.timeline-item i {
-    font-size: 1.8rem;
+/* Log Panel */
+.log-panel {
     flex: 1;
-    text-align: center;
-    min-width: 40px;
-}
-
-.timeline-info-details {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.timeline-info .time,
-.timeline-info .duration {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    text-transform: lowercase;
-}
-
-.timeline-info-details i {
-    font-size: 0.9rem;
-}
-
-.milk-amount {
-    display: none;  /* Defaultne skryté */
-    min-height: 50px;
+    overflow-y: auto;
+    background: #1c1c1e;
     padding: 1rem;
-    border-radius: 25px;
-    border: 2px solid transparent;  /* Pridáme border pre smooth transition */
-    font-size: 1rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    flex: 1;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    text-align: center;
-    background: #3a3a3c;
-    color: #ffffff;
+    padding-top: 0;;
 }
 
-.milk-amount:focus {
-    outline: none;
-    background: #4a4a4c;
-}
-
-/* Červený border pre neplatné hodnoty */
-.milk-amount:invalid,
-.milk-amount.invalid {
-    border-color: #ff453a;
-}
-
-/* Zobrazíme input len pre bottle feeding */
-body.type-bottlefeeding .milk-amount {
-    display: block;
-}
-
-/* Upravíme placeholder */
-.milk-amount::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-}
-
+/* Timeline */
 .timeline {
-    /* Zachováme len potrebné štýly */
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 }
 
-.milk-amount.hidden {
-    display: none !important;
+/* Zobrazíme active-timer len keď:
+   1. je aktívna úloha (active-task)
+   ALEBO
+   2. má neprázdny obsah A zároveň je to správny typ */
+.type-controls.active-task .active-timer,
+body.type-breastfeeding .type-controls.type-breastfeeding .active-timer:has(.time:not(:empty)),
+body.type-bottlefeeding .type-controls.type-bottlefeeding .active-timer:has(.time:not(:empty)),
+body.type-sleep .type-controls.type-sleep .active-timer:has(.time:not(:empty)) {
+    display: flex;
 }
 
-.active-timer .parameter {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.8);
-    flex: 1;
-    text-align: center;
-    visibility: hidden;
+/* Timeline item colors */
+.timeline-item[data-type="breastfeeding"] i { color: var(--color-breastfeeding); }
+.timeline-item[data-type="bottlefeeding"] i { color: var(--color-bottlefeeding); }
+.timeline-item[data-type="sleep"] i { color: var(--color-sleep); }
+.timeline-item[data-type="nappy"][data-subtype="pee"] i { color: var(--color-nappy-pee); }
+.timeline-item[data-type="nappy"][data-subtype="poop"] i { color: var(--color-nappy-poop); }
+
+/* Navigation button states */
+.nav-button {
+    /* ... existujúce štýly ... */
+    opacity: 0.8;  /* Default opacity */
 }
 
-/* Zobrazíme parameter len pre bottle feeding */
-body.type-bottlefeeding .active-timer .parameter {
-    visibility: visible;
+/* Active nav button */
+body.type-breastfeeding .nav-button[onclick*="breastfeeding"],
+body.type-bottlefeeding .nav-button[onclick*="bottlefeeding"],
+body.type-sleep .nav-button[onclick*="sleep"],
+body.type-nappy .nav-button[onclick*="nappy"] {
+    opacity: 1;
+}
+
+/* Nav buttons when timer is running */
+body:has(.type-controls.active-task) .nav-button {
+    opacity: 0.4;
+}
+
+/* Keep active nav button at opacity 1 when timer is running */
+body:has(.type-controls.active-task) .nav-button[onclick*="breastfeeding"].active,
+body:has(.type-controls.active-task) .nav-button[onclick*="bottlefeeding"].active,
+body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
+    opacity: 1;
+}
+
+/* Zobrazíme active-timer keď je aktívna úloha alebo má neprázdny obsah */
+.type-controls.active-task .active-timer,
+.active-timer:has(.time:not(:empty)),
+.active-timer:has(.duration:not(:empty)) {
+    display: flex;
+}
+
+/* Zobrazíme active-timer len keď má triedu show */
+.active-timer.show {
+    display: flex;
 }

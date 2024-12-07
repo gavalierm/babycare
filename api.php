@@ -48,8 +48,9 @@ function handleException($e) {
 }
 set_exception_handler('handleException');
 
+// Pridáme konštantu pre verziu a upravíme názov databázy
 const DB_FILE = 'baby_tracker.sqlite';
-const DB_VERSION = 2;  // Zvýšime verziu databázy
+const DB_VERSION = 3;  // Zvýšime verziu databázy
 const APP_VERSION = '1.0.0';
 
 // Spracovanie OPTIONS requestu pre CORS
@@ -79,12 +80,22 @@ function checkAndMigrate($db) {
         }
         
         if ($currentVersion < 2) {
-            // Pridanie stĺpca milk_amount
+            // Pridanie stĺpca milk_amount do activities
             try {
                 $db->exec('ALTER TABLE activities ADD COLUMN milk_amount INTEGER DEFAULT NULL');
                 $currentVersion = 2;
             } catch (Exception $e) {
-                throw new Exception('Migration to version 2 failed: ' . $e->getMessage());
+                error_log('Migration 2 (activities.milk_amount) failed: ' . $e->getMessage());
+            }
+        }
+        
+        if ($currentVersion < 3) {
+            // Pridanie stĺpca milk_amount do active_timer
+            try {
+                $db->exec('ALTER TABLE active_timer ADD COLUMN milk_amount INTEGER DEFAULT NULL');
+                $currentVersion = 3;
+            } catch (Exception $e) {
+                error_log('Migration 3 (active_timer.milk_amount) failed: ' . $e->getMessage());
             }
         }
         
@@ -97,31 +108,31 @@ function checkAndMigrate($db) {
 // Upravíme inicializáciu databázy
 function initDatabase() {
     try {
+        // Vytvoríme pripojenie k databáze
         $db = new SQLite3(DB_FILE);
         
-        // Vytvorenie základnej štruktúry
-        $db->exec('
-            CREATE TABLE IF NOT EXISTS activities (
+        if (!file_exists(DB_FILE)) {
+            // Vytvoríme/aktualizujeme schému databázy
+            $db->exec('CREATE TABLE IF NOT EXISTS activities (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 type TEXT NOT NULL,
-                start_time TEXT,
-                end_time TEXT,
+                subtype TEXT,
+                start_time INTEGER,
+                end_time INTEGER,
                 duration INTEGER,
-                paused_time INTEGER,
-                sub_type TEXT,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ');
-        
-        $db->exec('
-            CREATE TABLE IF NOT EXISTS active_timer (
-                id INTEGER PRIMARY KEY,
-                task_type TEXT,
-                start_time TEXT,
-                pause_time TEXT,
-                total_paused_time INTEGER
-            )
-        ');
+                amount INTEGER,
+                created_at INTEGER DEFAULT (strftime(\'%s\',\'now\'))
+            )');
+            
+            $db->exec('CREATE TABLE IF NOT EXISTS active_timer (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL,
+                start_time INTEGER,
+                paused_at INTEGER,
+                total_pause_duration INTEGER DEFAULT 0,
+                amount INTEGER
+            )');
+        }
         
         // Kontrola a vykonanie migrácií
         checkAndMigrate($db);
@@ -146,16 +157,27 @@ try {
             $action = $_GET['action'] ?? null;
             
             if ($action === 'active-timer') {
+                // Vrátime aktívny časovač
                 $stmt = $db->prepare('
-                    SELECT t.*, a.milk_amount 
-                    FROM active_timer t
-                    LEFT JOIN activities a ON a.type = t.task_type 
-                    AND a.start_time = t.start_time
-                    WHERE t.id = 1
+                    SELECT * FROM active_timer 
+                    WHERE id = 1
                 ');
                 $result = $stmt->execute();
                 $timer = $result->fetchArray(SQLITE3_ASSOC);
-                $response['data'] = $timer ?? null;
+                
+                // Konvertujeme názvy stĺpcov na camelCase pre JavaScript
+                if ($timer) {
+                    $response['data'] = [
+                        'task_type' => $timer['task_type'],
+                        'start_time' => $timer['start_time'],
+                        'pause_time' => $timer['pause_time'] ? $timer['pause_time'] : null,
+                        'total_paused_time' => (int)$timer['total_paused_time'],
+                        'milk_amount' => isset($timer['milk_amount']) ? (int)$timer['milk_amount'] : null
+                    ];
+                } else {
+                    $response['data'] = null;
+                }
+                
                 echo json_encode($response);
                 exit;
             }
@@ -232,9 +254,19 @@ try {
                     // Uložíme aktívny časovač
                     $stmt = $db->prepare('
                         INSERT OR REPLACE INTO active_timer (
-                            id, task_type, start_time, pause_time, total_paused_time
+                            id, 
+                            task_type, 
+                            start_time, 
+                            pause_time, 
+                            total_paused_time,
+                            milk_amount
                         ) VALUES (
-                            1, :type, :startTime, :pauseTime, :totalPausedTime
+                            1, 
+                            :type, 
+                            :startTime, 
+                            :pauseTime, 
+                            :totalPausedTime,
+                            :milkAmount
                         )
                     ');
                     
@@ -242,6 +274,7 @@ try {
                     $stmt->bindValue(':startTime', $input['startTime'], SQLITE3_TEXT);
                     $stmt->bindValue(':pauseTime', $input['pauseTime'], SQLITE3_TEXT);
                     $stmt->bindValue(':totalPausedTime', $input['totalPausedTime'], SQLITE3_INTEGER);
+                    $stmt->bindValue(':milkAmount', $input['milkAmount'] ?? null, SQLITE3_INTEGER);
                 }
                 
                 $result = $stmt->execute();

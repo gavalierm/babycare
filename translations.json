@@ -7,7 +7,9 @@
             "bottlefeeding": "Fľaška",
             "sleep": "Spánok",
             "nappy": "Plienka",
-            "no_activity": "žiadna aktivita"
+            "no_activity": "žiadna aktivita",
+            "nappy_pee": "Cikanie",
+            "nappy_poop": "Kakanie"
         },
         "controls": {
             "begin": "Začať",

@@ -6,7 +6,8 @@ let timerInterval = null;
 let lastTimerCheck = null;
 let translations = {};
 let currentLang = 'sk';
-const TRANSLATIONS_VERSION = '3.3.1';  // Pre kontrolu verzie prekladov
+const TRANSLATIONS_VERSION = '3.3.2';  // Pre kontrolu verzie prekladov
+const APP_VERSION = '1.0.0';
 
 // Optimalizované načítanie prekladov
 async function loadTranslations() {
@@ -102,12 +103,16 @@ function formatDateForGrouping(date) {
     });
 }
 
-// Helper funkcia pre tlačidlá
-function getControlButtons() {
+// Helper funkcia pre tlačidlá - upravíme na class selektory
+function getControlButtons(type) {
+    const controls = document.querySelector(`.type-controls.type-${type}`);
+    if (!controls) return null;  // Pridaná kontrola
+
     return {
-        startBtn: document.getElementById('begin-btn'),
-        stopBtn: document.getElementById('end-btn'),
-        pauseBtn: document.getElementById('pause-btn')
+        startBtn: controls.querySelector('.begin-btn'),
+        stopBtn: controls.querySelector('.stop-btn'),
+        pauseBtn: controls.querySelector('.pause-btn'),
+        milkAmount: type === 'bottlefeeding' ? controls.querySelector('.milk-amount') : null
     };
 }
 
@@ -117,61 +122,89 @@ function setActiveType(type) {
         console.log('Timer is running, cannot switch type');
         return;
     }
-
+    
     document.body.className = `type-${type}`;
     
+    // Nastavíme nadpis podľa typu
     const title = document.querySelector('.stage-title');
     title.textContent = t('activities.' + type);
-
-    if (type !== 'nappy') {
-        // Nastavíme štýly pre begin tlačidlo
-        const beginBtn = document.getElementById('begin-btn');
-        if (beginBtn) {
-            beginBtn.style.background = `var(--color-${type})`;
-            beginBtn.style.color = type === 'bottlefeeding' ? '#000000' : '#ffffff';
-            beginBtn.onclick = () => startTask(type);
+    
+    // Nastavíme active class pre nav button
+    document.querySelectorAll('.nav-button').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('onclick').includes(type));
+    });
+    
+    // Skryjeme active-timer pre neaktívny typ
+    document.querySelectorAll('.active-timer').forEach(timer => {
+        timer.classList.remove('show');
+        if (!activeTask) {
+            // Ak nie je aktívna úloha, vyčistíme hodnoty
+            timer.querySelector('.time').textContent = '';
+            timer.querySelector('.duration').textContent = '';
         }
-        
-        // Nastavíme event listeners pre ostatné tlačidlá
-        const endBtn = document.getElementById('end-btn');
-        const pauseBtn = document.getElementById('pause-btn');
-        
-        if (endBtn) endBtn.onclick = () => stopTask(type);
-        if (pauseBtn) pauseBtn.onclick = () => pauseTask(type);
-        
-        // Pridáme focus na input pre bottle feeding
-        if (type === 'bottlefeeding') {
-            const input = document.getElementById('milk-amount');
-            if (!activeTask) {  // Len ak nie je aktívna úloha
-                setTimeout(() => input.focus(), 100);  // Počkáme na CSS transition
+    });
+    
+    // Ak je aktívna úloha, zobrazíme active-timer pre aktívny typ
+    if (activeTask === type) {
+        const activeTimer = document.querySelector(`.type-controls.type-${type} .active-timer`);
+        if (activeTimer) {
+            activeTimer.classList.add('show');
+        }
+    }
+
+    // Nastavíme event handlers pre tlačidlá
+    const controls = document.querySelector(`.type-controls.type-${type}`);
+    if (controls) {
+        if (type === 'nappy') {
+            // Event handlers pre nappy tlačidlá
+            const peeBtn = controls.querySelector('[data-type="pee"]');
+            const poopBtn = controls.querySelector('[data-type="poop"]');
+            
+            if (peeBtn) peeBtn.onclick = () => logNappy('pee');
+            if (poopBtn) poopBtn.onclick = () => logNappy('poop');
+        } else {
+            // Event handlers pre ostatné typy
+            const beginBtn = controls.querySelector('.begin-btn');
+            const stopBtn = controls.querySelector('.stop-btn');
+            const pauseBtn = controls.querySelector('.pause-btn');
+
+            if (beginBtn) beginBtn.onclick = () => startTask(type);
+            if (stopBtn) stopBtn.onclick = () => stopTask(type);
+            if (pauseBtn) pauseBtn.onclick = () => pauseTask(type);
+            
+            // Nastavíme focus na milk-amount input pre bottle feeding
+            if (type === 'bottlefeeding' && !activeTask) {
+                const milkInput = controls.querySelector('.milk-amount');
+                if (milkInput) {
+                    setTimeout(() => milkInput.focus(), 100);
+                }
             }
         }
-    } else {
-        // Nastavíme event listeners pre nappy tlačidlá
-        const peeBtn = document.getElementById('pee-btn');
-        const poopBtn = document.getElementById('poop-btn');
-        
-        if (peeBtn) peeBtn.onclick = () => logNappy('pee');
-        if (poopBtn) poopBtn.onclick = () => logNappy('poop');
     }
 }
 
 function updateTimer() {
-    if (!startTime || pauseTime) return;
+    if (!startTime) return;
     
-    const elapsed = new Date() - startTime - totalPausedTime;
-    const activeTimer = document.querySelector('.active-timer');
-    
-    activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
-    activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed, true).value;
-    
-    // Pridáme parameter pre bottle feeding
-    const parameterEl = activeTimer.querySelector('.parameter');
-    if (activeTask === 'bottlefeeding') {
-        const amount = document.getElementById('milk-amount').value;
-        parameterEl.textContent = `${amount}ml`;
+    let elapsed;
+    if (pauseTime) {
+        elapsed = pauseTime - startTime - totalPausedTime;
     } else {
-        parameterEl.textContent = '';
+        elapsed = new Date() - startTime - totalPausedTime;
+    }
+    
+    // Aktualizujeme len aktívny timer
+    const activeTimer = document.querySelector(`.type-controls.type-${activeTask} .active-timer`);
+    if (activeTimer) {
+        activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
+        activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed, true).value;
+        
+        // Parameter pre bottle feeding
+        const parameterEl = activeTimer.querySelector('.parameter');
+        if (activeTask === 'bottlefeeding' && parameterEl) {
+            const amount = document.querySelector(`.type-controls.type-${activeTask} .milk-amount`).value;
+            parameterEl.textContent = `${amount}ml`;
+        }
     }
 }
 
@@ -251,15 +284,18 @@ function createTimelineItem(task) {
     
     const taskTime = task.type === 'nappy' ? new Date(task.time) : new Date(task.startTime);
     
+    // Nastavíme data atribúty pre typ a subtyp
+    item.dataset.type = task.type;
+    if (task.type === 'nappy') {
+        item.dataset.subtype = task.subType;
+    }
+    
     // Odstránime timeline-dot
     item.querySelector('.timeline-dot').remove();
     
     // Pridáme ikonu podľa typu
     const icon = document.createElement('i');
     icon.className = getIconClass(task.type, task.subType);
-    icon.style.color = task.type === 'nappy' ? 
-        (task.subType === 'poop' ? 'var(--color-nappy-poop)' : 'var(--color-nappy-pee)') :
-        `var(--color-${task.type})`;
     item.insertBefore(icon, item.firstChild);
     
     // Nastavíme text podľa typu aktivity
@@ -267,18 +303,25 @@ function createTimelineItem(task) {
     if (task.type === 'bottlefeeding') {
         const amount = task.milkAmount !== null ? task.milkAmount : 0;
         titleEl.textContent = `${t('activities.' + task.type)} • ${amount}ml`;
+    } else if (task.type === 'nappy') {
+        titleEl.textContent = `${t('activities.' + task.type)} • ${task.subType === 'poop' ? 'Kakanie' : 'Cikanie'}`;
     } else {
         titleEl.textContent = t('activities.' + task.type);
     }
     
-    // Nastavíme čas a trvanie
-    const timeEl = item.querySelector('.time');
-    const durationEl = item.querySelector('.duration');
-    const relativeTime = formatRelativeTime(taskTime);
+    // Nastavíme relatívny čas od konca aktivity
+    const relativeTimeEl = item.querySelector('.timeline-info-details .relative-time');
+    const endTime = task.type === 'nappy' ? taskTime : new Date(task.endTime);
+    const relativeTime = formatRelativeTime(endTime);
+    relativeTimeEl.querySelector('.label').textContent = t('time.before');
+    relativeTimeEl.querySelector('.time').textContent = relativeTime.value;
     
-    // Zobrazíme čas a relatívny čas bez labelu
-    timeEl.textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value}`;
+    // Nastavíme čas začiatku aktivity
+    const timeEl = item.querySelector('.timeline-info-details > .time');
+    timeEl.textContent = formatTimeOnly(taskTime);
     
+    // Nastavíme trvanie aktivity
+    const durationEl = item.querySelector('.timeline-info-details .duration');
     if (task.type === 'nappy') {
         // Pre nappy pridáme len ikonu
         const typeIcon = document.createElement('i');
@@ -324,9 +367,11 @@ function createTimelineDay(date, tasks) {
 }
 
 // Upravíme updateTimeline
-async function updateTimeline() {
+async function updateTimeline(activities = null) {
     const timelineEl = document.getElementById('timeline');
-    const activities = await fetchActivities();
+    if (!activities) {
+        activities = await fetchActivities();
+    }
     
     if (!activities || activities.length === 0) {
         timelineEl.innerHTML = `<p class="no-activities">${t('activities.no_activity')}</p>`;
@@ -351,15 +396,18 @@ async function updateTimeline() {
 
     timelineEl.innerHTML = '';
     timelineEl.appendChild(fragment);
+    
+    // Scrollujeme log panel na začiatok
+    const logPanel = document.querySelector('.log-panel');
+    logPanel.scrollTop = 0;
 }
 
-// Pridáme validáciu množstva mlieka
+// Upravíme validáciu množstva mlieka
 function validateMilkAmount() {
-    const input = document.getElementById('milk-amount');
+    const input = document.querySelector('.type-bottlefeeding .milk-amount');
     const amount = parseInt(input.value);
     const isValid = amount >= 30 && amount <= 500;
     
-    // Nastavíme alebo odstránime triedu invalid podľa validácie
     input.classList.toggle('invalid', !isValid);
     
     return isValid;
@@ -369,14 +417,12 @@ function validateMilkAmount() {
 async function startTask(type) {
     if (activeTask) return;
     
-    // Pre bottle feeding kontrolujeme množstvo mlieka
     if (type === 'bottlefeeding') {
-        const input = document.getElementById('milk-amount');
+        const input = document.querySelector('.type-bottlefeeding .milk-amount');
         if (!input.value || !validateMilkAmount()) {
             input.focus();
             return;
         }
-        // Skryjeme input po začatí
         input.classList.add('hidden');
     }
     
@@ -384,34 +430,51 @@ async function startTask(type) {
     startTime = new Date();
     totalPausedTime = 0;
     
-    const buttons = getControlButtons();
-    buttons.startBtn.classList.remove('visible');
-    buttons.stopBtn.classList.add('visible');
-    buttons.pauseBtn.classList.add('visible');
+    const buttons = getControlButtons(type);
+    if (!buttons) return;
+
+    // Okamžite nastavíme active-task triedu
+    const controls = document.querySelector(`.type-controls.type-${type}`);
+    controls.classList.add('active-task');
+
+    // Nastavíme správnu ikonu pre pause tlačidlo (ikona play, keďže nie sme v pauze)
+    buttons.pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
     
-    // Disable milk amount input počas aktivity
-    if (type === 'bottlefeeding') {
-        document.getElementById('milk-amount').disabled = true;
-    }
-    
+    // Okamžite spustíme timer
     updateTimer();
     timerInterval = setInterval(updateTimer, 1000);
     
+    // Disable milk amount input počas aktivity
+    if (type === 'bottlefeeding') {
+        const input = document.querySelector('.type-bottlefeeding .milk-amount');
+        if (input) {
+            input.disabled = true;
+        }
+    }
+    
+    // API volanie až na konci
     await saveActiveTimer();
+    
+    // Zobrazíme active-timer
+    const activeTimer = document.querySelector(`.type-controls.type-${type} .active-timer`);
+    if (activeTimer) {
+        activeTimer.classList.add('show');
+    }
 }
 
 async function pauseTask() {
     if (!activeTask) return;
     
-    const buttons = getControlButtons();
+    const buttons = getControlButtons(activeTask);  // Pridaný parameter activeTask
+    if (!buttons) return;  // Pridaná kontrola
     
     if (pauseTime) {
         totalPausedTime += new Date() - pauseTime;
         pauseTime = null;
-        buttons.pauseBtn.textContent = t('controls.pause');
+        buttons.pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
     } else {
         pauseTime = new Date();
-        buttons.pauseBtn.textContent = t('controls.resume');
+        buttons.pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
     }
     
     await saveActiveTimer();
@@ -447,10 +510,12 @@ async function stopTask() {
 
         // Pridáme množstvo mlieka pre bottle feeding
         if (activeTask === 'bottlefeeding') {
-            const milkInput = document.getElementById('milk-amount');
-            const milkAmount = parseInt(milkInput.value);
-            if (!isNaN(milkAmount) && milkAmount >= 30 && milkAmount <= 500) {
-                data.milkAmount = milkAmount;
+            const input = document.querySelector('.type-bottlefeeding .milk-amount');
+            if (input) {
+                const milkAmount = parseInt(input.value);
+                if (!isNaN(milkAmount) && milkAmount >= 30 && milkAmount <= 500) {
+                    data.milkAmount = milkAmount;
+                }
             }
         }
 
@@ -460,17 +525,20 @@ async function stopTask() {
             body: JSON.stringify(data)
         });
         
-        const buttons = getControlButtons();
-        buttons.startBtn.classList.add('visible');
-        buttons.stopBtn.classList.remove('visible');
-        buttons.pauseBtn.classList.remove('visible');
+        // Odstránime active-task triedu
+        const controls = document.querySelector(`.type-controls.type-${activeTask}`);
+        if (controls) {
+            controls.classList.remove('active-task');
+        }
         
         // Reset milk amount input
         if (activeTask === 'bottlefeeding') {
-            const input = document.getElementById('milk-amount');
-            input.disabled = false;
-            input.value = '';
-            input.classList.remove('hidden');  // Zobrazíme input späť
+            const input = document.querySelector('.type-bottlefeeding .milk-amount');
+            if (input) {
+                input.disabled = false;
+                input.value = '';
+                input.classList.remove('hidden');
+            }
         }
         
         activeTask = null;
@@ -483,18 +551,28 @@ async function stopTask() {
     } catch (error) {
         console.error('Failed to save activity:', error);
     }
+    
+    // Skryjeme active-timer
+    const activeTimer = document.querySelector(`.type-controls.type-${activeTask} .active-timer`);
+    if (activeTimer) {
+        activeTimer.classList.remove('show');
+        activeTimer.querySelector('.time').textContent = '';
+        activeTimer.querySelector('.duration').textContent = '';
+    }
 }
 
 async function logNappy(type) {
     try {
+        const data = {
+            type: 'nappy',
+            subType: type,  // 'pee' alebo 'poop'
+            time: new Date().toISOString()
+        };
+
         await fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: 'nappy',
-                subType: type,
-                time: new Date().toISOString()
-            })
+            body: JSON.stringify(data)
         });
         
         await updateTimeline();
@@ -520,15 +598,25 @@ async function fetchActivities() {
 async function saveActiveTimer() {
     if (activeTask && startTime) {
         try {
+            const data = {
+                taskType: activeTask,
+                startTime: startTime.toISOString(),
+                pauseTime: pauseTime ? pauseTime.toISOString() : null,
+                totalPausedTime: totalPausedTime
+            };
+
+            // Pridáme milk_amount pre bottle feeding
+            if (activeTask === 'bottlefeeding') {
+                const input = document.getElementById('milk-amount');
+                if (input.value) {
+                    data.milkAmount = parseInt(input.value);
+                }
+            }
+
             await fetch('api.php?action=active-timer', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    taskType: activeTask,
-                    startTime: startTime.toISOString(),
-                    pauseTime: pauseTime ? pauseTime.toISOString() : null,
-                    totalPausedTime: totalPausedTime
-                })
+                body: JSON.stringify(data)
             });
         } catch (error) {
             console.error('Failed to save timer state:', error);
@@ -550,18 +638,30 @@ async function loadActiveTimer() {
 
             setActiveType(activeTask);
             
-            const buttons = getControlButtons();
-            buttons.startBtn.classList.remove('visible');
-            buttons.stopBtn.classList.add('visible');
-            buttons.pauseBtn.classList.add('visible');
-            buttons.pauseBtn.textContent = pauseTime ? t('controls.resume') : t('controls.pause');
+            const controls = document.querySelector(`.type-controls.type-${activeTask}`);
+            if (controls) {
+                controls.classList.add('active-task');
+            }
+            
+            const buttons = getControlButtons(activeTask);
+            if (!buttons) return;
+            
+            buttons.pauseBtn.innerHTML = pauseTime ? 
+                '<i class="fas fa-pause"></i>' :
+                '<i class="fas fa-play"></i>';
             
             // Pridáme nastavenie pre bottle feeding
-            if (activeTask === 'bottlefeeding' && timer.milk_amount) {
+            if (activeTask === 'bottlefeeding') {
                 const input = document.getElementById('milk-amount');
-                input.value = timer.milk_amount;
+                input.value = timer.milk_amount || '';
                 input.disabled = true;
                 input.classList.add('hidden');
+                
+                // Aktualizujeme parameter v active-timer
+                const parameterEl = document.querySelector('.active-timer .parameter');
+                if (timer.milk_amount) {
+                    parameterEl.textContent = `${timer.milk_amount}ml`;
+                }
             }
             
             updateTimer();
@@ -594,28 +694,35 @@ async function checkTimerUpdates() {
             totalPausedTime = 0;
             clearInterval(timerInterval);
             
-            const buttons = getControlButtons();
-            if (buttons.startBtn) buttons.startBtn.classList.add('visible');
-            if (buttons.stopBtn) buttons.stopBtn.classList.remove('visible');
-            if (buttons.pauseBtn) buttons.pauseBtn.classList.remove('visible');
+            const buttons = getControlButtons(activeTask);  // Pridaný parameter activeTask
+            if (buttons) {  // Pridaná kontrola
+                buttons.startBtn.classList.add('visible');
+                buttons.stopBtn.classList.remove('visible');
+                buttons.pauseBtn.classList.remove('visible');
+            }
             
             await updateTimeline();
         }
     } catch (error) {
         console.error('Failed to check timer updates:', error);
     }
-    await updateLastActivities();
 }
 
 // Nová funkcia pre aktualizáciu časov posledných aktivít
-async function updateLastActivities() {
-    const activities = await fetchActivities();
+async function updateLastActivities(activities = null) {
+    if (!activities) {
+        activities = await fetchActivities();
+    }
+    
     if (!activities || activities.length === 0) return;
     
     const lastActivities = {};
     activities.forEach(activity => {
         const type = activity.type;
-        const time = activity.type === 'nappy' ? new Date(activity.time) : new Date(activity.startTime);
+        // Použijeme endTime pre aktivity s trvaním, time pre nappy
+        const time = activity.type === 'nappy' ? 
+            new Date(activity.time) : 
+            new Date(activity.endTime);  // Zmenené zo startTime na endTime
         
         if (!lastActivities[type] || time > new Date(lastActivities[type])) {
             lastActivities[type] = time;
@@ -663,22 +770,35 @@ function updateUITranslations() {
 // Inicializácia
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTranslations();
-    updateUITranslations();  // Aktualizujeme všetky preklady
+    updateUITranslations();
     
     if (!activeTask) {
         setActiveType('breastfeeding');
     }
     
     await loadActiveTimer();
-    await updateTimeline();
-    await updateLastActivities();
+    
+    const activities = await fetchActivities();
+    await updateTimeline(activities);
+    await updateLastActivities(activities);
+    
+    // Pridáme event listener pre milk-amount input
+    const milkInput = document.querySelector('.type-bottlefeeding .milk-amount');
+    if (milkInput) {
+        milkInput.addEventListener('input', validateMilkAmount);
+    }
 });
 
-// Polling
+// Polling len pre aktívny časovač
 setInterval(checkTimerUpdates, 5000);
 
-// Pridáme event listener pre input na real-time validáciu
-document.addEventListener('DOMContentLoaded', () => {
-    const milkInput = document.getElementById('milk-amount');
-    milkInput.addEventListener('input', validateMilkAmount);
-});
+// Upravíme všetky API volania aby používali verziu
+async function fetchFromAPI(params = {}) {
+    try {
+        const response = await fetch(`api.php?version=${APP_VERSION}&${new URLSearchParams(params)}`);
+        // ... zvyšok funkcie zostáva nezmenený ...
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}

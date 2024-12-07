@@ -1,5 +1,5 @@
-const CACHE_NAME = 'baby-care-v3.3.1';
-const CACHE_VERSION = '3.3.1';
+const CACHE_NAME = 'baby-care-v3.3.3';
+const CACHE_VERSION = '3.3.2';
 
 self.addEventListener('install', (event) => {
     event.waitUntil(

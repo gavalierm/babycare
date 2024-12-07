@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
-    <meta name="version" content="3.3.1">
+    <meta name="version" content="3.3.3">
 </head>
 <body class="type-breastfeeding">
     <main class="app-container">
@@ -62,47 +62,81 @@
                 </div>
             </nav>
 
-            <!-- Active Timer Display -->
-            <div class="active-timer">
-                <span class="duration"></span>
-                <span class="parameter"></span>
-                <span class="time"></span>
-            </div>
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <!-- Breastfeeding Controls -->
+                <div class="type-controls type-breastfeeding">
+                    <div class="controls">
+                        <button class="control-btn begin-btn" id="breastfeeding-begin" data-translate="controls.begin">Začať</button>
+                        <button class="control-btn stop-btn" id="breastfeeding-stop" data-translate="controls.end">Ukončiť</button>
+                        <button class="control-btn pause-btn" id="breastfeeding-pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                    </div>
+                    <div class="active-timer">
+                        <span class="duration"></span>
+                        <span class="time"></span>
+                    </div>
+                </div>
 
-            <!-- Controls -->
-            <div class="controls">
-                <!-- Timer Controls -->
-                <button id="begin-btn" class="visible" data-translate="controls.begin">Začať</button>
-                <button id="end-btn" class="stop-btn" data-translate="controls.end">Ukončiť</button>
-                <button id="pause-btn" class="pause-btn" data-translate="controls.pause">Pauza</button>
-                
-                <!-- Nový input pre množstvo mlieka -->
-                <input type="number" 
-                       id="milk-amount" 
-                       class="milk-amount" 
-                       min="30" 
-                       max="500" 
-                       step="5"
-                       placeholder="Množstvo v ml"
-                       data-translate="controls.milk_amount_placeholder">
-                
+                <!-- Bottlefeeding Controls -->
+                <div class="type-controls type-bottlefeeding">
+                    <div class="controls">
+                        <button class="control-btn begin-btn" id="bottlefeeding-begin" data-translate="controls.begin">Začať</button>
+                        <button class="control-btn stop-btn" id="bottlefeeding-stop" data-translate="controls.end">Ukončiť</button>
+                        <button class="control-btn pause-btn" id="bottlefeeding-pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <input type="number" 
+                               class="control-btn milk-amount" 
+                               id="bottlefeeding-milk-amount"
+                               min="30" 
+                               max="500" 
+                               step="5"
+                               placeholder="Množstvo v ml"
+                               data-translate="controls.milk_amount_placeholder">
+                    </div>
+                    <div class="active-timer">
+                        <span class="duration"></span>
+                        <span class="parameter"></span>
+                        <span class="time"></span>
+                    </div>
+                </div>
+
+                <!-- Sleep Controls -->
+                <div class="type-controls type-sleep">
+                    <div class="controls">
+                        <button class="control-btn begin-btn" id="sleep-begin" data-translate="controls.begin">Začať</button>
+                        <button class="control-btn stop-btn" id="sleep-stop" data-translate="controls.end">Ukončiť</button>
+                        <button class="control-btn pause-btn" id="sleep-pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                    </div>
+                    <div class="active-timer">
+                        <span class="duration"></span>
+                        <span class="time"></span>
+                    </div>
+                </div>
+
                 <!-- Nappy Controls -->
-                <button id="pee-btn" class="nappy-pee nappy-control">
-                    <i class="fas fa-water"></i>
-                </button>
-                <button id="poop-btn" class="nappy-poop nappy-control">
-                    <i class="fas fa-poo"></i>
-                </button>
+                <div class="type-controls type-nappy">
+                    <div class="controls">
+                        <button class="control-btn nappy-control" id="nappy-pee" data-type="pee">
+                            <i class="fas fa-water"></i>
+                        </button>
+                        <button class="control-btn nappy-control" id="nappy-poop" data-type="poop">
+                            <i class="fas fa-poo"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- Log Panel -->
         <section class="log-panel">
-            <div class="log-scroll-container">
                 <div class="timeline" id="timeline">
                     <!-- Timeline items will be inserted here -->
                 </div>
-            </div>
         </section>
     </main>
 
@@ -114,6 +148,10 @@
                 <strong></strong>
                 <div class="timeline-info-details">
                     <div class="time"></div>
+                    <div class="relative-time">
+                        <span class="label" data-translate="time.before">pred</span>
+                        <span class="time">--</span>
+                    </div>
                     <div class="duration"></div>
                 </div>
             </div>
