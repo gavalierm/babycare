@@ -1,1 +1,20 @@
- 
+# Zabránenie prístupu k SQLite databázam
+<FilesMatch "\.sqlite$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Zabránenie zobrazeniu obsahu adresára
+Options -Indexes
+
+# Zabránenie prístupu k súborom začínajúcim s bodkou (vrátane .htaccess)
+<FilesMatch "^\.">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Povolenie prístupu len k potrebným súborom
+<FilesMatch "^(index\.html|api\.php|style\.css|script\.js|manifest\.json|sw\.js)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch> 

@@ -221,57 +221,75 @@ function pauseTask(taskType) {
     }
 }
 
-function stopTask(taskType) {
+async function stopTask(taskType) {
     if (activeTask !== taskType) return;
     
     clearInterval(timerInterval);
     const endTime = new Date();
     const duration = endTime - startTime - totalPausedTime;
     
-    taskHistory.unshift({
-        type: taskType,
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        duration: duration,
-        pausedTime: totalPausedTime
-    });
-
-    const startBtn = document.getElementById(`${taskType}-start`);
-    const stopBtn = document.getElementById(`${taskType}-stop`);
-    const pauseBtn = document.getElementById(`${taskType}-pause`);
-    const timerEl = document.getElementById(`${taskType}-timer`);
-    
-    startBtn.classList.add('visible');
-    stopBtn.classList.remove('visible');
-    pauseBtn.classList.remove('visible');
-    timerEl.textContent = '...';
-    
-    activeTask = null;
-    startTime = null;
-    pauseTime = null;
-    totalPausedTime = 0;
-    
-    enableScreenSwitching();
-    
-    updateRecentActivities();
-    saveToLocalStorage();
-    updateTimeline();
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: taskType,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                duration: duration,
+                pausedTime: totalPausedTime
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to save activity');
+        
+        const startBtn = document.getElementById(`${taskType}-start`);
+        const stopBtn = document.getElementById(`${taskType}-stop`);
+        const pauseBtn = document.getElementById(`${taskType}-pause`);
+        const timerEl = document.getElementById(`${taskType}-timer`);
+        
+        startBtn.classList.add('visible');
+        stopBtn.classList.remove('visible');
+        pauseBtn.classList.remove('visible');
+        timerEl.textContent = '...';
+        
+        activeTask = null;
+        startTime = null;
+        pauseTime = null;
+        totalPausedTime = 0;
+        
+        enableScreenSwitching();
+        
+        await updateRecentActivities();
+        await updateTimeline();
+    } catch (error) {
+        console.error('Failed to save activity:', error);
+    }
 }
 
-function logNappy(type) {
-    taskHistory.unshift({
-        type: 'nappy',
-        subType: type,
-        time: new Date().toISOString()
-    });
-    
-    saveToLocalStorage();
-    updateTimeline();
-    updateRecentActivities();
-}
-
-function saveToLocalStorage() {
-    localStorage.setItem('babyTaskHistory', JSON.stringify(taskHistory));
+async function logNappy(type) {
+    try {
+        const response = await fetch('api.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: 'nappy',
+                subType: type,
+                time: new Date().toISOString()
+            })
+        });
+        
+        if (!response.ok) throw new Error('Failed to save nappy change');
+        
+        await updateRecentActivities();
+        await updateTimeline();
+    } catch (error) {
+        console.error('Failed to save nappy change:', error);
+    }
 }
 
 function createTimelineItem(task) {
@@ -307,42 +325,34 @@ function createTimelineDay(date, tasks) {
     return container;
 }
 
-function updateTimeline() {
-    const timelineEl = document.getElementById('timeline');
-    const fragment = document.createDocumentFragment();
-    
-    const groupedTasks = taskHistory.reduce((groups, task) => {
-        const date = new Date(task.type === 'nappy' ? task.time : task.startTime);
-        const dateKey = formatDateForGrouping(date);
+// Nová funkcia pre načítanie dát z API
+async function fetchActivities(type = null) {
+    try {
+        const url = type ? 
+            `api.php?type=${type}` : 
+            'api.php';
         
-        if (!groups[dateKey]) {
-            groups[dateKey] = [];
-        }
-        groups[dateKey].push(task);
-        return groups;
-    }, {});
-
-    Object.entries(groupedTasks).forEach(([date, tasks]) => {
-        fragment.appendChild(createTimelineDay(date, tasks));
-    });
-
-    timelineEl.innerHTML = '';
-    timelineEl.appendChild(fragment);
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.data;
+    } catch (error) {
+        console.error('Failed to fetch activities:', error);
+        return [];
+    }
 }
 
-function updateRecentActivities() {
-    ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(type => {
+// Upravená funkcia updateRecentActivities
+async function updateRecentActivities() {
+    ['breastfeeding', 'bottlefeeding', 'soothing'].forEach(async (type) => {
         const recentEl = document.getElementById(`${type}-recent`);
         if (!recentEl) return;
         
         // Aktualizujeme active slot
         updateActiveSlot(type);
         
-        // Naplníme sloty históriou
-        const historyItems = taskHistory
-            .filter(task => task.type === type)
-            .slice(0, 6);
-            
+        // Načítame históriu z API
+        const historyItems = await fetchActivities(type);
+        
         historyItems.forEach((task, index) => {
             const slotIndex = index + 1;
             const slot = recentEl.querySelector(`[data-slot="${slotIndex}"]`);
@@ -371,9 +381,7 @@ function updateRecentActivities() {
     // Update nappy screen
     const nappyRecentEl = document.getElementById('nappy-recent');
     if (nappyRecentEl) {
-        const historyItems = taskHistory
-            .filter(task => task.type === 'nappy')
-            .slice(0, 6);
+        const historyItems = await fetchActivities('nappy');
         
         historyItems.forEach((task, index) => {
             const slotIndex = index + 1;
@@ -399,6 +407,36 @@ function updateRecentActivities() {
             }
         }
     }
+}
+
+// Upravená funkcia updateTimeline
+async function updateTimeline() {
+    const timelineEl = document.getElementById('timeline');
+    const fragment = document.createDocumentFragment();
+    
+    const activities = await fetchActivities();
+    
+    if (!activities || activities.length === 0) {
+        return;
+    }
+    
+    const groupedTasks = activities.reduce((groups, task) => {
+        const date = new Date(task.type === 'nappy' ? task.time : task.startTime);
+        const dateKey = formatDateForGrouping(date);
+        
+        if (!groups[dateKey]) {
+            groups[dateKey] = [];
+        }
+        groups[dateKey].push(task);
+        return groups;
+    }, {});
+
+    Object.entries(groupedTasks).forEach(([date, tasks]) => {
+        fragment.appendChild(createTimelineDay(date, tasks));
+    });
+
+    timelineEl.innerHTML = '';
+    timelineEl.appendChild(fragment);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

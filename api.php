@@ -1,8 +1,52 @@
 <?php
+// Vypneme zobrazovanie PHP chýb
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Nastavíme hlavičky
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Pridáme error handler
+function handleError($errno, $errstr, $errfile, $errline) {
+    $response = [
+        'error' => $errstr,  // Vypíšeme konkrétnu chybu
+        'details' => [
+            'file' => $errfile,
+            'line' => $errline
+        ],
+        'data' => []
+    ];
+    http_response_code(500);  // Internal Server Error
+    echo json_encode($response);
+    exit;
+}
+set_error_handler('handleError');
+
+// Pridáme exception handler
+function handleException($e) {
+    $response = [
+        'error' => $e->getMessage(),
+        'details' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ],
+        'data' => []
+    ];
+    
+    // Nastavíme správny HTTP status kód
+    if ($e instanceof InvalidArgumentException) {
+        http_response_code(400);  // Bad Request
+    } else {
+        http_response_code(500);  // Internal Server Error
+    }
+    
+    echo json_encode($response);
+    exit;
+}
+set_exception_handler('handleException');
 
 const DB_FILE = 'baby_tracker.sqlite';
 const APP_VERSION = '1.0.0';
@@ -75,11 +119,36 @@ try {
     
     switch ($method) {
         case 'GET':
-            // Načítanie histórie
-            $stmt = $db->prepare('SELECT * FROM activities ORDER BY created_at DESC');
-            $result = $stmt->execute();
+            $type = $_GET['type'] ?? null;
             
+            if ($type === '') {  // Prázdny parameter
+                throw new InvalidArgumentException('Type parameter cannot be empty');
+            }
+            
+            if ($type) {
+                // Načítanie histórie pre konkrétny typ
+                $stmt = $db->prepare('
+                    SELECT * FROM activities 
+                    WHERE type = :type 
+                    ORDER BY created_at DESC 
+                    LIMIT 6
+                ');
+                $stmt->bindValue(':type', $type, SQLITE3_TEXT);
+            } else {
+                // Načítanie celej histórie za posledných 30 dní
+                $thirtyDaysAgo = date('c', strtotime('-30 days'));
+                $stmt = $db->prepare('
+                    SELECT * FROM activities 
+                    WHERE (start_time IS NOT NULL AND start_time >= :date) 
+                       OR (created_at >= :date)  /* Len created_at a start_time */
+                    ORDER BY created_at DESC
+                ');
+                $stmt->bindValue(':date', $thirtyDaysAgo, SQLITE3_TEXT);
+            }
+            
+            $result = $stmt->execute();
             $activities = [];
+            
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                 // Konverzia na formát kompatibilný s aplikáciou
                 $activity = [
@@ -90,7 +159,6 @@ try {
                     'pausedTime' => (int)$row['paused_time']
                 ];
                 
-                // Pre nappy aktivity pridáme subType
                 if ($row['type'] === 'nappy') {
                     $activity['subType'] = $row['sub_type'];
                     $activity['time'] = $row['start_time'];
