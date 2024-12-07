@@ -1,7 +1,7 @@
 {
     "name": "Starostlivosť o bábätko",
     "short_name": "Bábätko",
-    "version": "3.0.0",
+    "version": "3.2.0",
     "description": "Sledovanie denných aktivít bábätka s real-time synchronizáciou",
     "start_url": "/",
     "display": "standalone",

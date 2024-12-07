@@ -18,7 +18,8 @@
             "today": "Dnes",
             "yesterday": "Včera",
             "just_now": "práve teraz",
-            "time": "čas"
+            "time": "čas",
+            "before": "pred"
         },
         "duration": {
             "minute": "minúta",

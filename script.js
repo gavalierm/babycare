@@ -6,7 +6,7 @@ let timerInterval = null;
 let lastTimerCheck = null;
 let translations = {};
 let currentLang = 'sk';
-const TRANSLATIONS_VERSION = '3.0.0';  // Pre kontrolu verzie prekladov
+const TRANSLATIONS_VERSION = '3.2.0';  // Pre kontrolu verzie prekladov
 
 // Optimalizované načítanie prekladov
 async function loadTranslations() {
@@ -199,40 +199,30 @@ function formatRelativeTime(date) {
     
     // Menej ako minúta - zobrazíme sekundy
     if (diffInSeconds < 60) {
-        if (diffInSeconds === 1) return { value: '1', label: t('relative_time.second') };
-        if (diffInSeconds < 5) return { value: diffInSeconds, label: t('relative_time.seconds_2_4') };
-        return { value: diffInSeconds, label: t('relative_time.seconds') };
+        return { value: `${diffInSeconds}s`, label: '' };
     }
     
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     
-    // Menej ako hodina - zobrazíme MM:SS minút
+    // Menej ako hodina - zobrazíme len minúty
     if (diffInMinutes < 60) {
-        const remainingSeconds = diffInSeconds % 60;
-        const time = `${diffInMinutes}:${String(remainingSeconds).padStart(2, '0')}`;
-        
-        if (diffInMinutes === 1) return { value: time, label: t('relative_time.minute') };
-        if (diffInMinutes < 5) return { value: time, label: t('relative_time.minutes_2_4') };
-        return { value: time, label: t('relative_time.minutes') };
+        return { value: `${diffInMinutes}m`, label: '' };
     }
     
     const diffInHours = Math.floor(diffInMinutes / 60);
+    const remainingMinutes = diffInMinutes % 60;
     
-    // Menej ako deň - zobrazíme HH:MM hodín
+    // Menej ako deň - zobrazíme hodiny a minúty
     if (diffInHours < 24) {
-        const remainingMinutes = diffInMinutes % 60;
-        const time = `${diffInHours}:${String(remainingMinutes).padStart(2, '0')}`;
-        
-        if (diffInHours === 1) return { value: time, label: t('relative_time.hour') };
-        if (diffInHours < 5) return { value: time, label: t('relative_time.hours_2_4') };
-        return { value: time, label: t('relative_time.hours') };
+        if (remainingMinutes === 0) {
+            return { value: `${diffInHours}h`, label: '' };
+        }
+        return { value: `${diffInHours}h ${remainingMinutes}m`, label: '' };
     }
     
-    // Viac ako deň - zobrazíme DD dní
+    // Viac ako deň - zobrazíme dni
     const diffInDays = Math.floor(diffInHours / 24);
-    if (diffInDays === 1) return { value: '1', label: t('relative_time.day') };
-    if (diffInDays < 5) return { value: diffInDays, label: t('relative_time.days_2_4') };
-    return { value: diffInDays, label: t('relative_time.days') };
+    return { value: `${diffInDays}d`, label: '' };
 }
 
 // Timeline funkcie
@@ -263,8 +253,8 @@ function createTimelineItem(task) {
     const durationEl = item.querySelector('.duration');
     const relativeTime = formatRelativeTime(taskTime);
     
-    // Zobrazíme čas a relatívny čas s labelom
-    timeEl.textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value} ${relativeTime.label}`;
+    // Zobrazíme čas a relatívny čas bez labelu
+    timeEl.textContent = `${formatTimeOnly(taskTime)} • ${relativeTime.value}`;
     
     if (task.type === 'nappy') {
         // Pre nappy pridáme len ikonu
@@ -310,7 +300,7 @@ function createTimelineDay(date, tasks) {
     return container;
 }
 
-// Upravím updateUnifiedTimeline
+// Upravíme updateUnifiedTimeline
 async function updateUnifiedTimeline() {
     const timelineEl = document.getElementById('unified-timeline');
     const activities = await fetchActivities();
@@ -563,11 +553,11 @@ async function updateLastActivities() {
         
         if (lastActivity) {
             const relativeTime = formatRelativeTime(lastActivity);
+            labelEl.textContent = t('time.before');
             timeEl.textContent = relativeTime.value;
-            labelEl.textContent = relativeTime.label;
         } else {
-            timeEl.textContent = '--';
-            labelEl.textContent = t('activities.no_activity');
+            labelEl.textContent = '';
+            timeEl.textContent = t('activities.no_activity');
         }
     });
 }

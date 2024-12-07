@@ -1,6 +1,47 @@
-# Baby Care Tracker v3.0.0
+# Baby Care Tracker v3.2.0
 
 A Progressive Web App for tracking baby's daily activities with real-time synchronization across devices.
+
+## Changelog
+
+### v3.2.0
+- Optimized mobile design
+- Removed hover effects for better mobile usability
+- Cleaned up unused CSS rules
+- Removed duplicate styles
+- Improved time display formatting
+- Added Slovak language with proper grammar cases
+- Enhanced relative time display (seconds, minutes, hours, days)
+- Optimized translations loading via localStorage
+- Added icons for all activity types
+- Improved timeline information layout
+- Fixed relative time display issues
+
+### v3.0.0
+- First stable release
+- Core activity tracking functionality
+- Offline mode support
+- Real-time device synchronization
+- Basic user interface
+
+### v2.0.0
+- Added Slovak language support
+- Enhanced mobile design
+- Added new activity icons
+- Improved time display
+- Added activity timeline
+- Added last activity display
+- Performance optimizations
+- Fixed synchronization issues
+
+### v1.0.0
+- Initial release
+- Breast, bottle and sleep tracking
+- Basic activity timer
+- Basic device synchronization
+- English-only interface
+- SQLite data storage
+- PWA functionality
 
 ## Core Features
 
