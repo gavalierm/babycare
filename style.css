@@ -84,6 +84,8 @@ body {
     color: #ffffff;
     opacity: 0.8;
     transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
 .nav-button i {
@@ -143,6 +145,8 @@ body {
     color: rgba(255, 255, 255, 1);
     font-size: 1.28rem;
     gap: 1rem;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
 .active-timer .time::before,
@@ -194,6 +198,8 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
 .control-btn i {
@@ -303,12 +309,22 @@ body.type-nappy .nappy-control {
 /* Timeline */
 .timeline-item {
     background: rgba(44, 44, 46, 0.8);
+    color: white;
     border-radius: 10px;
     padding: 1rem;
     margin-bottom: 0.8rem;
     display: flex;
     align-items: center;
     gap: 1rem;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;  /* Pre mobilné zariadenia */
+}
+
+.timeline-item:hover {
+    background: rgba(44, 44, 46, 0.9);
 }
 
 .timeline-info {
@@ -413,11 +429,11 @@ body.type-sleep .type-controls.type-sleep .active-timer:has(.time:not(:empty)) {
 }
 
 /* Timeline item colors */
-.timeline-item[data-type="breastfeeding"] i { color: var(--color-breastfeeding); }
-.timeline-item[data-type="bottlefeeding"] i { color: var(--color-bottlefeeding); }
-.timeline-item[data-type="sleep"] i { color: var(--color-sleep); }
-.timeline-item[data-type="nappy"][data-subtype="pee"] i { color: var(--color-nappy-pee); }
-.timeline-item[data-type="nappy"][data-subtype="poop"] i { color: var(--color-nappy-poop); }
+.timeline-item[data-type="breastfeeding"] i:first-child { color: var(--color-breastfeeding); }
+.timeline-item[data-type="bottlefeeding"] i:first-child { color: var(--color-bottlefeeding); }
+.timeline-item[data-type="sleep"] i:first-child { color: var(--color-sleep); }
+.timeline-item[data-type="nappy"][data-sub-type="pee"] i:first-child { color: var(--color-nappy-pee); }
+.timeline-item[data-type="nappy"][data-sub-type="poop"] i:first-child { color: var(--color-nappy-poop); }
 
 /* Navigation button states */
 .nav-button {
@@ -512,13 +528,12 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
 
 .form-group select,
 .form-group input {
+    @extend .control-btn;
     width: 100%;
-    padding: 0.8rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+    outline: none;
+    text-transform: none;
 }
 
 .time-field {
@@ -542,6 +557,8 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
 .nappy-type-btn.selected {
@@ -613,13 +630,14 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
 }
 
 /* Modal action buttons */
-.modal-actions .control-btn:first-child {
+.modal-actions .circular-btn {
+    flex: 0 0 3.25rem;
     aspect-ratio: 1;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 3.25rem;
+    border-radius: 100%;
 }
 
 .modal-actions .control-btn:first-child i {
@@ -679,8 +697,127 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
 /* Bottle feeding input */
 .type-bottlefeeding .controls .milk-amount {
     flex: 0.7;  /* Menšia šírka ako ostatné tlačidlá (ktoré majú flex: 1) */
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #000 !important;
+    border: none !important;
+    outline: none !important;
+    padding: 1rem !important;
+    border-radius: 25px !important;
+    text-transform: none !important;
 }
 
+.timeline-info-details .relative-time{
+flex:1
+}
 .type-bottlefeeding .controls .begin-btn {
     flex: 1.3;  /* Väčšia šírka ako milk-amount input */
+}
+
+/* Placeholder color */
+.form-group input::placeholder,
+.milk-amount::placeholder {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+/* Delete Button */
+.delete-btn {
+    display: none !important;
+}
+
+/* Zobrazíme delete button len keď je modal v režime úprav */
+.modal-actions .delete-btn {
+    display: none !important;
+}
+
+/* Najšpecifickejší selektor pre zobrazenie delete tlačidla */
+#add-record-modal[data-original-data]:not([data-original-data=""]) .modal-actions .delete-btn {
+    display: flex !important;
+}
+
+.delete-btn i {
+    font-size: 1.2rem;
+    color: var(--color-delete, #ff453a);
+}
+
+/* Circular Button */
+.circular-btn {
+    aspect-ratio: 1 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 0 0 3.25rem !important;
+    border-radius: 100% !important;
+}
+
+/* Save Button */
+.modal-actions .control-btn:last-child {
+    flex: 1;
+}
+
+/* Globálne pravidlo pre všetky interaktívne elementy */
+button,
+.control-btn,
+.nav-button,
+.timeline-item,
+.nappy-type-btn,
+.modal-actions button,
+input[type="number"],
+input[type="date"],
+input[type="time"] {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+/* Špecifické úpravy pre jednotlivé typy */
+.nav-button {
+    width: 100%;
+    min-height: 48px;
+    /* ... existujúce štýly ... */
+}
+
+.control-btn {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* ... existujúce štýly ... */
+}
+
+.timeline-item {
+    background: rgba(44, 44, 46, 0.8);
+    /* ... existujúce štýly ... */
+}
+
+.nappy-type-btn {
+    flex: 1;
+    /* ... existujúce štýly ... */
+}
+
+.modal-actions button {
+    /* ... existujúce štýly ... */
+}
+
+/* Pre input polia */
+input[type="number"],
+input[type="date"],
+input[type="time"] {
+    /* ... existujúce štýly ... */
+}
+
+/* Disabled save button */
+.modal-actions .control-btn[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Save button je štandardne disabled */
+.modal-actions .control-btn[onclick="saveRecord()"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Aktivujeme tlačidlo len keď je formulár "špinavý" */
+body.form-dirty .modal-actions .control-btn[onclick="saveRecord()"] {
+    opacity: 1;
+    cursor: pointer;
 }

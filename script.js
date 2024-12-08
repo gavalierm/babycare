@@ -9,6 +9,30 @@ let currentLang = 'sk';
 const TRANSLATIONS_VERSION = '3.3.2';  // Pre kontrolu verzie prekladov
 const APP_VERSION = '1.0.0';
 
+// Pridáme globálnu premennú pre editovaný záznam
+let editedItemId = null;
+
+// Pridáme globálnu premennú
+let lastActivities = {};
+
+// Pridáme funkciu pre načítanie detailov záznamu
+async function fetchActivityDetails(id) {
+    try {
+        const response = await fetch(`api.php?id=${id}`);
+        if (!response.ok) {
+            throw new Error('Failed to fetch activity details');
+        }
+        const data = await response.json();
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        return data.data;
+    } catch (error) {
+        console.error('Error fetching activity details:', error);
+        throw error;
+    }
+}
+
 // Optimalizované načítanie prekladov
 async function loadTranslations() {
     try {
@@ -240,96 +264,93 @@ function formatRelativeTime(date, isDuration = false) {
             return { value: `${minutes}m ${remainingSeconds}s`, label: '' };
         }
         
-        if (remainingMinutes === 0) {
-            return { value: `${hours}h`, label: '' };
-        }
-        return { value: `${hours}h ${remainingMinutes}m`, label: '' };
+        // Pre hodiny použijeme formát Hh MMm
+        return { value: `${hours}h ${String(remainingMinutes).padStart(2, '0')}m`, label: '' };
     } else {
-        // Pôvodná logika pre relatívny čas
+        // Pre relatívny čas
+        if (!(date instanceof Date)) {
+            date = new Date(date);
+        }
+        
         const now = new Date();
         const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        // Konverzia na čitateľnejší formát
+        const minutes = Math.floor(diffInSeconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        const remainingMinutes = minutes % 60;
         
         if (diffInSeconds < 60) {
             return { value: `${diffInSeconds}s`, label: '' };
         }
         
-        const diffInMinutes = Math.floor(diffInSeconds / 60);
-        const remainingSeconds = diffInSeconds % 60;
-        
-        if (diffInMinutes < 60) {
-            // Pre rozsah 1-60 minút zobrazíme aj sekundy
-            return { value: `${diffInMinutes}m ${remainingSeconds}s`, label: '' };
+        if (minutes < 60) {
+            return { value: `${minutes}m`, label: '' };
         }
         
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        const remainingMinutes = diffInMinutes % 60;
-        
-        if (diffInHours < 24) {
-            if (remainingMinutes === 0) {
-                return { value: `${diffInHours}h`, label: '' };
-            }
-            return { value: `${diffInHours}h ${remainingMinutes}m`, label: '' };
+        if (hours < 24) {
+            // Pre hodiny použijeme formát Hh MMm
+            return { value: `${hours}h ${String(remainingMinutes).padStart(2, '0')}m`, label: '' };
         }
         
-        const diffInDays = Math.floor(diffInHours / 24);
-        return { value: `${diffInDays}d`, label: '' };
+        return { value: `${days}d`, label: '' };
     }
 }
 
 // Timeline funkcie
-function createTimelineItem(task) {
+function createTimelineItem(activity) {
     const template = document.getElementById('timeline-item-template');
-    const element = template.content.cloneNode(true);
-    const item = element.querySelector('.timeline-item');
+    const item = template.content.cloneNode(true);
+    const itemEl = item.querySelector('.timeline-item');
     
-    const taskTime = task.type === 'nappy' ? new Date(task.time) : new Date(task.startTime);
-    
-    // Nastavíme data atribúty pre typ a subtyp
-    item.dataset.type = task.type;
-    if (task.type === 'nappy') {
-        item.dataset.subtype = task.subType;
+    itemEl.dataset.id = activity.id;
+    itemEl.dataset.type = activity.type;
+    if (activity.type === 'nappy') {
+        itemEl.dataset.subType = activity.subType;
+        itemEl.dataset.time = activity.time;
+    } else {
+        itemEl.dataset.startTime = activity.startTime;
+        itemEl.dataset.endTime = activity.endTime;
     }
-    
-    // Odstránime timeline-dot
-    item.querySelector('.timeline-dot').remove();
     
     // Pridáme ikonu podľa typu
     const icon = document.createElement('i');
-    icon.className = getIconClass(task.type, task.subType);
-    item.insertBefore(icon, item.firstChild);
+    icon.className = getIconClass(activity.type, activity.subType);
+    itemEl.insertBefore(icon, itemEl.firstChild);
     
     // Nastavíme text podľa typu aktivity
-    const titleEl = item.querySelector('strong');
-    if (task.type === 'bottlefeeding') {
-        const amount = task.milkAmount !== null ? task.milkAmount : 0;
-        titleEl.textContent = `${t('activities.' + task.type)} • ${amount}ml`;
-    } else if (task.type === 'nappy') {
-        titleEl.textContent = `${t('activities.' + task.type)} • ${task.subType === 'poop' ? 'Kakanie' : 'Cikanie'}`;
+    const titleEl = itemEl.querySelector('strong');
+    if (activity.type === 'bottlefeeding') {
+        const amount = activity.milkAmount !== null ? activity.milkAmount : 0;
+        titleEl.textContent = `${t('activities.' + activity.type)} • ${amount}ml`;
+    } else if (activity.type === 'nappy') {
+        titleEl.textContent = `${t('activities.' + activity.type)} • ${activity.subType === 'poop' ? 'Kakanie' : 'Cikanie'}`;
     } else {
-        titleEl.textContent = t('activities.' + task.type);
+        titleEl.textContent = t('activities.' + activity.type);
     }
     
     // Nastavíme relatívny čas od konca aktivity
-    const relativeTimeEl = item.querySelector('.timeline-info-details .relative-time');
-    const endTime = task.type === 'nappy' ? taskTime : new Date(task.endTime);
+    const relativeTimeEl = itemEl.querySelector('.timeline-info-details .relative-time');
+    const endTime = activity.type === 'nappy' ? new Date(activity.time) : new Date(activity.endTime);
     const relativeTime = formatRelativeTime(endTime);
     relativeTimeEl.querySelector('.label').textContent = t('time.before');
     relativeTimeEl.querySelector('.time').textContent = relativeTime.value;
     
     // Nastavíme čas začiatku aktivity
-    const timeEl = item.querySelector('.timeline-info-details > .time');
-    timeEl.textContent = formatTimeOnly(taskTime);
+    const timeEl = itemEl.querySelector('.timeline-info-details > .time');
+    timeEl.textContent = formatTimeOnly(activity.type === 'nappy' ? new Date(activity.time) : new Date(activity.startTime));
     
     // Nastavíme trvanie aktivity
-    const durationEl = item.querySelector('.timeline-info-details .duration');
-    if (task.type === 'nappy') {
+    const durationEl = itemEl.querySelector('.timeline-info-details .duration');
+    if (activity.type === 'nappy') {
         // Pre nappy pridáme len ikonu
         const typeIcon = document.createElement('i');
-        typeIcon.className = task.subType === 'poop' ? 'fas fa-poo' : 'fas fa-water';
+        typeIcon.className = activity.subType === 'poop' ? 'fas fa-poo' : 'fas fa-water';
         durationEl.appendChild(typeIcon);
     } else {
         // Pre ostatné aktivity pridáme trvanie
-        durationEl.textContent = formatRelativeTime(task.duration, true).value;
+        durationEl.textContent = formatRelativeTime(activity.duration, true).value;
     }
     
     return item;
@@ -716,29 +737,31 @@ async function updateLastActivities(activities = null) {
     
     if (!activities || activities.length === 0) return;
     
-    const lastActivities = {};
+    // Resetujeme lastActivities
+    lastActivities = {};
+    
+    // Aktualizujeme lastActivities
     activities.forEach(activity => {
         const type = activity.type;
         // Použijeme endTime pre aktivity s trvaním, time pre nappy
         const time = activity.type === 'nappy' ? 
             new Date(activity.time) : 
-            new Date(activity.endTime);  // Zmenené zo startTime na endTime
+            new Date(activity.endTime);
         
         if (!lastActivities[type] || time > new Date(lastActivities[type])) {
             lastActivities[type] = time;
         }
     });
     
+    // Aktualizujeme UI
     document.querySelectorAll('.nav-item').forEach(item => {
         const button = item.querySelector('.nav-button');
         const type = button.getAttribute('onclick').match(/'([^']+)'/)[1];
-        const lastActivity = lastActivities[type];
-        
         const timeEl = item.querySelector('.last-activity .time');
         const labelEl = item.querySelector('.last-activity .label');
         
-        if (lastActivity) {
-            const relativeTime = formatRelativeTime(lastActivity);
+        if (lastActivities[type]) {
+            const relativeTime = formatRelativeTime(lastActivities[type]);
             labelEl.textContent = t('time.before');
             timeEl.textContent = relativeTime.value;
         } else {
@@ -805,12 +828,28 @@ async function fetchFromAPI(params = {}) {
 
 // Modal functions
 function showAddRecordModal(type) {
+    // Reset editedItemId pri pridávaní nového záznamu
+    editedItemId = null;
+    
     const modal = document.getElementById('add-record-modal');
+    delete modal.dataset.originalData;
+    
     modal.style.display = 'flex';
     
     // Nastavíme text typu aktivity
-    const typeText = document.querySelector('.modal-type');
+    const typeText = modal.querySelector('.modal-type');
     typeText.textContent = t('activities.' + type);
+    
+    // Nastavíme typ aktivity
+    modal.dataset.type = type;
+    
+    // Reset form-dirty class
+    document.body.classList.remove('form-dirty');
+    
+    // Nastavíme správny titulok
+    const modalTitle = modal.querySelector('.modal-subtitle');
+    modalTitle.setAttribute('data-translate', 'modal.add_record');
+    modalTitle.textContent = t('modal.add_record');
     
     // Nastavíme predvolené hodnoty
     const now = new Date();
@@ -834,12 +873,12 @@ function showAddRecordModal(type) {
     document.getElementById('end-date').value = dateStr;
     document.getElementById('end-time').value = timeStr;
     
-    // Nastavíme typ aktivity
-    const typeFields = document.getElementById('time-fields');
+    // Nastavíme typ polí podľa typu aktivity
+    const timeFields = document.getElementById('time-fields');
     const nappyFields = document.getElementById('nappy-fields');
     const bottleFields = document.getElementById('bottle-fields');
     
-    typeFields.style.display = type !== 'nappy' ? 'block' : 'none';
+    timeFields.style.display = type !== 'nappy' ? 'block' : 'none';
     nappyFields.style.display = type === 'nappy' ? 'block' : 'none';
     bottleFields.style.display = type === 'bottlefeeding' ? 'block' : 'none';
     
@@ -849,26 +888,24 @@ function showAddRecordModal(type) {
         btn.classList.remove('selected');
     });
     
-    // Uložíme typ do data atribútu pre použitie pri ukladaní
-    modal.dataset.type = type;
+    // Reset milk amount
+    const milkAmountInput = document.getElementById('milk-amount');
+    if (milkAmountInput) {
+        milkAmountInput.value = '';
+    }
 }
 
 function hideAddRecordModal() {
-    document.getElementById('add-record-modal').style.display = 'none';
-}
-
-function handleRecordTypeChange() {
-    const type = document.getElementById('record-type').value;
-    const timeFields = document.getElementById('time-fields');
-    const nappyFields = document.getElementById('nappy-fields');
-    const bottleFields = document.getElementById('bottle-fields');
+    const modal = document.getElementById('add-record-modal');
+    modal.style.display = 'none';
+    editedItemId = null;
     
-    timeFields.style.display = type !== 'nappy' ? 'block' : 'none';
-    nappyFields.style.display = type === 'nappy' ? 'block' : 'none';
-    bottleFields.style.display = type === 'bottlefeeding' ? 'block' : 'none';
+    // Odstránime data-original-data atribút
+    delete modal.dataset.originalData;
+    
+    // Odstránime form-dirty class
+    document.body.classList.remove('form-dirty');
 }
-
-let selectedNappyType = null;
 
 function selectNappyType(type) {
     selectedNappyType = type;
@@ -878,7 +915,8 @@ function selectNappyType(type) {
 }
 
 async function saveRecord() {
-    const type = document.getElementById('add-record-modal').dataset.type;
+    const modal = document.getElementById('add-record-modal');
+    const type = modal.dataset.type;
     let data = { type };
     
     if (type === 'nappy') {
@@ -886,19 +924,19 @@ async function saveRecord() {
             alert(t('modal.select_nappy_type'));
             return;
         }
-        
-        data = {
-            type: 'nappy',
-            subType: selectedNappyType,
-            time: new Date().toISOString()
-        };
-        
-        await logNappy(selectedNappyType);
+        data.subType = selectedNappyType;
+        data.time = new Date().toISOString();
     } else {
+        // Vytvoríme ISO dátumy pre začiatok a koniec
         const startDate = document.getElementById('start-date').value;
         const startTime = document.getElementById('start-time').value;
         const endDate = document.getElementById('end-date').value;
         const endTime = document.getElementById('end-time').value;
+        
+        if (!startDate || !startTime || !endDate || !endTime) {
+            alert(t('modal.invalid_time_range'));
+            return;
+        }
         
         const startDateTime = new Date(`${startDate}T${startTime}`);
         const endDateTime = new Date(`${endDate}T${endTime}`);
@@ -908,13 +946,9 @@ async function saveRecord() {
             return;
         }
         
-        data = {
-            type,
-            startTime: startDateTime.toISOString(),
-            endTime: endDateTime.toISOString(),
-            duration: endDateTime - startDateTime,
-            pausedTime: 0
-        };
+        data.startTime = startDateTime.toISOString();
+        data.endTime = endDateTime.toISOString();
+        data.duration = Math.floor((endDateTime - startDateTime) / 1000);
         
         if (type === 'bottlefeeding') {
             const amount = parseInt(document.getElementById('milk-amount').value);
@@ -924,17 +958,39 @@ async function saveRecord() {
             }
             data.milkAmount = amount;
         }
-        
-        await fetch('api.php', {
-            method: 'POST',
+    }
+    
+    const method = editedItemId ? 'PUT' : 'POST';
+    const url = editedItemId ? `api.php?id=${editedItemId}` : 'api.php';
+    
+    try {
+        const response = await fetch(url, {
+            method,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
+        
+        if (!response.ok) {
+            throw new Error('Nepodarilo sa uložiť záznam');
+        }
+
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error);
+        }
+        
+        await updateTimeline();
+        await updateLastActivities();
+        hideAddRecordModal();
+        editedItemId = null;
+        
+        return result;  // Vrátime celý výsledok
+    } catch (error) {
+        console.error('Error saving record:', error);
+        alert('Nepodarilo sa uložiť záznam');
+        throw error;  // Prehodíme chybu ďalej
     }
-    
-    await updateTimeline();
-    await updateLastActivities();
-    hideAddRecordModal();
 }
 
 // Pridáme event listener pre zatvorenie modalu pri kliknutí mimo obsahu
@@ -946,3 +1002,174 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// Upravíme funkciu pre zobrazenie edit modalu
+function showEditModal(button) {
+    // Získame ID zo správneho atribútu
+    const id = button.closest('.timeline-item').dataset.id;
+    if (!id) {
+        console.error('No ID found for edit');
+        return;
+    }
+    
+    try {
+        openEditModal(id);  // Voláme novú funkciu
+    } catch (error) {
+        console.error('Error showing edit modal:', error);
+        alert('Nepodarilo sa načítať údaje pre úpravu');
+    }
+}
+
+// Vytvoríme novú funkciu pre otvorenie edit modalu
+async function openEditModal(id) {
+    try {
+        const data = await fetchActivityDetails(id);
+        const modal = document.getElementById('add-record-modal');
+        
+        // Uložíme originálne dáta do dataset modalu
+        modal.dataset.originalData = JSON.stringify(data);
+        
+        // Nastavíme ID editovaného záznamu
+        editedItemId = id;
+        modal.dataset.type = data.type;
+        
+        // Nastavíme nadpis typu aktivity
+        const typeText = modal.querySelector('.modal-type');
+        typeText.textContent = t('activities.' + data.type);
+        
+        // Nastavíme typ polí podľa typu aktivity
+        const timeFields = document.getElementById('time-fields');
+        const nappyFields = document.getElementById('nappy-fields');
+        const bottleFields = document.getElementById('bottle-fields');
+        
+        timeFields.style.display = data.type !== 'nappy' ? 'block' : 'none';
+        nappyFields.style.display = data.type === 'nappy' ? 'block' : 'none';
+        bottleFields.style.display = data.type === 'bottlefeeding' ? 'block' : 'none';
+
+        if (data.type === 'nappy') {
+            selectNappyType(data.subType);
+            // Pre nappy použijeme time namiesto startTime
+            const nappyTime = new Date(data.time);
+            document.getElementById('start-date').value = nappyTime.toISOString().split('T')[0];
+            document.getElementById('start-time').value = nappyTime.toTimeString().slice(0,5);
+        } else {
+            // Rozdelíme ISO dátum na dátum a čas pre začiatok
+            if (data.startTime) {
+                const startDate = new Date(data.startTime);
+                document.getElementById('start-date').value = startDate.toISOString().split('T')[0];
+                document.getElementById('start-time').value = startDate.toTimeString().slice(0,5);
+            }
+            
+            // Rozdelíme ISO dátum na dátum a čas pre koniec
+            if (data.endTime) {
+                const endDate = new Date(data.endTime);
+                document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+                document.getElementById('end-time').value = endDate.toTimeString().slice(0,5);
+            }
+            
+            // Nastavíme množstvo mlieka pre fľašu
+            if (data.type === 'bottlefeeding' && data.milkAmount !== null) {
+                const milkAmountInput = document.getElementById('milk-amount');
+                if (milkAmountInput) {
+                    milkAmountInput.value = data.milkAmount;
+                }
+            }
+        }
+        
+        // Aktualizujeme titulok modálneho okna
+        const modalTitle = modal.querySelector('.modal-subtitle');
+        modalTitle.setAttribute('data-translate', 'modal.edit_record');
+        modalTitle.textContent = t('modal.edit_record');
+        
+        // Nastavíme onclick handler pre delete tlačidlo
+        const deleteBtn = modal.querySelector('.delete-btn');
+        if (deleteBtn) {
+            deleteBtn.onclick = () => deleteRecord(id);
+        }
+        
+        // Pridáme event listener na celý formulár
+        const form = modal.querySelector('.modal-form');
+        form.addEventListener('change', () => {
+            document.body.classList.add('form-dirty');
+        });
+        
+        // Pre input type="number" sledujeme aj input event
+        const numberInputs = form.querySelectorAll('input[type="number"]');
+        numberInputs.forEach(input => {
+            input.addEventListener('input', () => {
+                document.body.classList.add('form-dirty');
+            });
+        });
+        
+        // Pre nappy type buttons
+        const nappyButtons = form.querySelectorAll('.nappy-type-btn');
+        nappyButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.body.classList.add('form-dirty');
+            });
+        });
+        
+        // Inicializujeme stav - odstránime form-dirty class
+        document.body.classList.remove('form-dirty');
+        
+        modal.style.display = 'flex';
+    } catch (error) {
+        console.error('Error opening edit modal:', error);
+        alert('Nepodarilo sa načítať údaje pre úpravu');
+    }
+}
+
+// Pridáme funkciu pre aktualizáciu relatívnych časov
+function updateRelativeTimes() {
+    document.querySelectorAll('.timeline-item').forEach(item => {
+        const relativeTimeEl = item.querySelector('.relative-time .time');
+        const timeEl = item.querySelector('.timeline-info-details > .time');
+        
+        if (timeEl && relativeTimeEl) {
+            const time = item.dataset.type === 'nappy' ? 
+                new Date(item.dataset.time) : 
+                new Date(item.dataset.endTime);
+            
+            const relativeTime = formatRelativeTime(time);
+            relativeTimeEl.textContent = relativeTime.value;
+        }
+    });
+    
+    // Aktualizujeme aj časy v navigácii
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const button = item.querySelector('.nav-button');
+        const type = button.getAttribute('onclick').match(/'([^']+)'/)[1];
+        const timeEl = item.querySelector('.last-activity .time');
+        const lastActivity = lastActivities[type];
+        
+        if (lastActivity && timeEl) {
+            const relativeTime = formatRelativeTime(lastActivity);
+            timeEl.textContent = relativeTime.value;
+        }
+    });
+}
+
+// Pridáme interval pre aktualizáciu relatívnych časov
+setInterval(updateRelativeTimes, 10000);  // 10 sekúnd
+
+// Pridáme funkciu pre vymazanie záznamu
+async function deleteRecord(id) {
+    if (confirm(t('modal.confirm_delete'))) {
+        try {
+            const response = await fetch(`api.php?id=${id}`, {
+                method: 'DELETE'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Nepodarilo sa vymazať záznam');
+            }
+            
+            await updateTimeline();
+            await updateLastActivities();
+            hideAddRecordModal();
+        } catch (error) {
+            console.error('Error deleting record:', error);
+            alert('Nepodarilo sa vymazať záznam');
+        }
+    }
+}

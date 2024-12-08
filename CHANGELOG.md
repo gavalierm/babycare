@@ -1,4 +1,24 @@
-# Changelog
+# Záznam zmien
+
+## [3.5.0] - 2024-03-22
+
+### Pridané
+- Možnosť upravovať existujúce záznamy
+- Možnosť vymazať záznamy
+- Indikácia zmien vo formulári (form-dirty)
+- Vylepšené zobrazovanie relatívnych časov (formát Hh MMm)
+
+### Vylepšené
+- Lepšie vizuálne odlíšenie typov plienok (cikanie/kakanie)
+- Optimalizované zobrazenie modálneho okna pre úpravu
+- Lepšia validácia vstupov pri úprave záznamov
+- Automatická aktualizácia relatívnych časov každých 10 sekúnd
+
+### Technické
+- Pridaná podpora pre PUT a DELETE HTTP metódy
+- Vylepšené spracovanie CORS hlavičiek
+- Optimalizované API odpovede pre jednotlivé záznamy
+- Odstránený nepoužívaný kód
 
 ## [3.4.0] - 2024-03-21
 
@@ -28,4 +48,4 @@
 
 ### Technické
 - Zjednotená logika zobrazovania pause/play ikony v celej aplikácii
-- Vylepšené spracovanie pause_time v API response
+- Vylepšené spracovanie pause_time v API odpovedi

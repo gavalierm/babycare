@@ -3,23 +3,29 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 
-// Nastavíme hlavičky
+// Nastavíme hlavičky pre CORS
 header('Content-Type: application/json');
 header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+
+// Pre OPTIONS request vrátime len hlavičky
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
 
 // Pridáme error handler
 function handleError($errno, $errstr, $errfile, $errline) {
     $response = [
-        'error' => $errstr,  // Vypíšeme konkrétnu chybu
+        'error' => $errstr,
         'details' => [
             'file' => $errfile,
             'line' => $errline
         ],
         'data' => []
     ];
-    http_response_code(500);  // Internal Server Error
+    http_response_code(500);
     echo json_encode($response);
     exit;
 }
@@ -36,11 +42,13 @@ function handleException($e) {
         'data' => []
     ];
     
-    // Nastavíme správny HTTP status kód
-    if ($e instanceof InvalidArgumentException) {
-        http_response_code(400);  // Bad Request
-    } else {
-        http_response_code(500);  // Internal Server Error
+    // Ak už nie je nastavený status kód, nastavíme ho
+    if (http_response_code() === 200) {
+        if ($e instanceof InvalidArgumentException) {
+            http_response_code(400);  // Bad Request
+        } else {
+            http_response_code(500);  // Internal Server Error
+        }
     }
     
     echo json_encode($response);
@@ -52,12 +60,6 @@ set_exception_handler('handleException');
 const DB_FILE = 'baby_tracker.sqlite';
 const DB_VERSION = 3;  // Zvýšime verziu databázy
 const APP_VERSION = '1.0.0';
-
-// Spracovanie OPTIONS requestu pre CORS
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    echo json_encode([]);
-    exit(0);
-}
 
 // Funkcia pre kontrolu a vykonanie migrácií
 function checkAndMigrate($db) {
@@ -155,6 +157,7 @@ try {
         case 'GET':
             $type = $_GET['type'] ?? null;
             $action = $_GET['action'] ?? null;
+            $id = isset($_GET['id']) ? (int)$_GET['id'] : null;  // Explicitná konverzia na integer
             
             if ($action === 'active-timer') {
                 // Vrátime aktívny časovač
@@ -180,13 +183,40 @@ try {
                 
                 echo json_encode($response);
                 exit;
-            }
-            
-            if ($type === '') {  // Prázdny parameter
-                throw new InvalidArgumentException('Type parameter cannot be empty');
-            }
-            
-            if ($type) {
+            } else if ($id) {
+                // Načítanie konkrétneho záznamu
+                $stmt = $db->prepare('
+                    SELECT * FROM activities 
+                    WHERE id = :id
+                ');
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+                $result = $stmt->execute();
+                $activity = $result->fetchArray(SQLITE3_ASSOC);
+                
+                if ($activity) {
+                    // Konvertujeme dáta do správneho formátu - vrátime priamo objekt
+                    $response['data'] = [
+                        'id' => (int)$activity['id'],
+                        'type' => $activity['type'],
+                        'startTime' => $activity['start_time'],
+                        'endTime' => $activity['end_time'],
+                        'duration' => (int)$activity['duration'],
+                        'milkAmount' => isset($activity['milk_amount']) ? (int)$activity['milk_amount'] : null
+                    ];
+                    
+                    // Pre nappy typ pridáme špeciálne polia
+                    if ($activity['type'] === 'nappy') {
+                        $response['data']['subType'] = $activity['sub_type'];
+                        $response['data']['time'] = $activity['start_time'];
+                    }
+                    
+                    echo json_encode($response);
+                    exit();  // Ukončíme spracovanie
+                } else {
+                    http_response_code(404);
+                    throw new Exception('Activity not found');
+                }
+            } else if ($type) {
                 // Načítanie histórie pre konkrétny typ
                 $stmt = $db->prepare('
                     SELECT * FROM activities 
@@ -213,6 +243,7 @@ try {
             while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
                 // Konverzia na formát kompatibilný s aplikáciou
                 $activity = [
+                    'id' => (int)$row['id'],
                     'type' => $row['type'],
                     'startTime' => $row['start_time'],
                     'endTime' => $row['end_time'],
@@ -336,6 +367,89 @@ try {
             } else {
                 throw new Exception('Failed to save activity');
             }
+            break;
+            
+        case 'PUT':
+            $input = json_decode(file_get_contents('php://input'), true);
+            $id = $_GET['id'] ?? null;
+            
+            if (!$id || !$input) {
+                throw new InvalidArgumentException('Missing ID or input data');
+            }
+            
+            if ($input['type'] === 'nappy') {
+                $stmt = $db->prepare('
+                    UPDATE activities 
+                    SET type = :type,
+                        sub_type = :subType,
+                        start_time = :time
+                    WHERE id = :id
+                ');
+                
+                $stmt->bindValue(':type', $input['type'], SQLITE3_TEXT);
+                $stmt->bindValue(':subType', $input['subType'], SQLITE3_TEXT);
+                $stmt->bindValue(':time', $input['time'], SQLITE3_TEXT);
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            } else {
+                $stmt = $db->prepare('
+                    UPDATE activities 
+                    SET type = :type,
+                        start_time = :startTime,
+                        end_time = :endTime,
+                        duration = :duration,
+                        milk_amount = :milkAmount
+                    WHERE id = :id
+                ');
+                
+                $stmt->bindValue(':type', $input['type'], SQLITE3_TEXT);
+                $stmt->bindValue(':startTime', $input['startTime'], SQLITE3_TEXT);
+                $stmt->bindValue(':endTime', $input['endTime'], SQLITE3_TEXT);
+                $stmt->bindValue(':duration', $input['duration'], SQLITE3_INTEGER);
+                $stmt->bindValue(':milkAmount', $input['milkAmount'] ?? null, SQLITE3_NULL);
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            }
+            
+            $result = $stmt->execute();
+            
+            if ($result) {
+                // Načítame aktualizovaný záznam
+                $stmt = $db->prepare('SELECT * FROM activities WHERE id = :id');
+                $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+                $result = $stmt->execute();
+                $activity = $result->fetchArray(SQLITE3_ASSOC);
+                
+                if ($activity) {
+                    $response['data'] = [
+                        'id' => (int)$activity['id'],
+                        'type' => $activity['type'],
+                        'startTime' => $activity['start_time'],
+                        'endTime' => $activity['end_time'],
+                        'duration' => (int)$activity['duration'],
+                        'milkAmount' => isset($activity['milk_amount']) ? (int)$activity['milk_amount'] : null
+                    ];
+                    
+                    if ($activity['type'] === 'nappy') {
+                        $response['data']['subType'] = $activity['sub_type'];
+                        $response['data']['time'] = $activity['start_time'];
+                    }
+                }
+            }
+            
+            $response['success'] = true;
+            break;
+            
+        case 'DELETE':
+            $id = $_GET['id'] ?? null;
+            
+            if (!$id) {
+                throw new InvalidArgumentException('Missing ID');
+            }
+            
+            $stmt = $db->prepare('DELETE FROM activities WHERE id = :id');
+            $stmt->bindValue(':id', $id, SQLITE3_INTEGER);
+            $result = $stmt->execute();
+            
+            $response['success'] = true;
             break;
             
         default:

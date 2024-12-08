@@ -13,8 +13,20 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
+# Povolenie všetkých potrebných HTTP metód
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} ^(GET|POST|PUT|DELETE|OPTIONS)
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+
 # Povolenie prístupu len k potrebným súborom
 <FilesMatch "^(index\.html|api\.php|style\.css|script\.js|manifest\.json|sw\.js)$">
     Order Allow,Deny
     Allow from all
+    
+    # Povolenie CORS a HTTP metód
+    Header always set Access-Control-Allow-Origin "*"
+    Header always set Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
 </FilesMatch> 

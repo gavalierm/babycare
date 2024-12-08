@@ -165,15 +165,15 @@
                         <div class="time-field">
                             <label data-translate="modal.start_time">Začiatok</label>
                             <div class="datetime-inputs">
-                                <input type="date" id="start-date" class="date-input">
-                                <input type="time" id="start-time" class="time-input">
+                                <input type="date" id="start-date" class="control-btn date-input">
+                                <input type="time" id="start-time" class="control-btn time-input">
                             </div>
                         </div>
                         <div class="time-field">
                             <label data-translate="modal.end_time">Koniec</label>
                             <div class="datetime-inputs">
-                                <input type="date" id="end-date" class="date-input">
-                                <input type="time" id="end-time" class="time-input">
+                                <input type="date" id="end-date" class="control-btn date-input">
+                                <input type="time" id="end-time" class="control-btn time-input">
                             </div>
                         </div>
                     </div>
@@ -194,13 +194,16 @@
                     
                     <div id="bottle-fields" class="form-group" style="display: none;">
                         <label data-translate="modal.milk_amount">Množstvo mlieka (ml)</label>
-                        <input type="number" id="milk-amount" min="30" max="500" step="5">
+                        <input type="number" id="milk-amount" class="control-btn" min="30" max="500" step="5">
                     </div>
                 </div>
                 
                 <div class="modal-actions">
-                    <button class="control-btn" onclick="hideAddRecordModal()">
+                    <button class="control-btn circular-btn" onclick="hideAddRecordModal()">
                         <i class="fas fa-times"></i>
+                    </button>
+                    <button class="control-btn circular-btn delete-btn">
+                        <i class="fas fa-trash"></i>
                     </button>
                     <button class="control-btn" onclick="saveRecord()" data-translate="modal.save">Uložiť</button>
                 </div>
@@ -210,8 +213,7 @@
 
     <!-- Templates -->
     <template id="timeline-item-template">
-        <div class="timeline-item">
-            <div class="timeline-dot"></div>
+        <div class="timeline-item" onclick="showEditModal(this)">
             <div class="timeline-info">
                 <strong></strong>
                 <div class="timeline-info-details">
