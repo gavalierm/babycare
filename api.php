@@ -160,20 +160,18 @@ try {
             $id = isset($_GET['id']) ? (int)$_GET['id'] : null;  // Explicitná konverzia na integer
             
             if ($action === 'active-timer') {
-                // Vrátime aktívny časovač
-                $stmt = $db->prepare('
-                    SELECT * FROM active_timer 
-                    WHERE id = 1
-                ');
+                // Načítanie aktívneho časovača
+                $stmt = $db->prepare('SELECT * FROM active_timer WHERE id = 1');
                 $result = $stmt->execute();
                 $timer = $result->fetchArray(SQLITE3_ASSOC);
                 
-                // Konvertujeme názvy stĺpcov na camelCase pre JavaScript
-                if ($timer) {
+                $response = ['error' => null];
+                
+                if ($timer && $timer['task_type']) {
                     $response['data'] = [
                         'task_type' => $timer['task_type'],
                         'start_time' => $timer['start_time'],
-                        'pause_time' => $timer['pause_time'] ? $timer['pause_time'] : null,
+                        'pause_time' => $timer['pause_time'],
                         'total_paused_time' => (int)$timer['total_paused_time'],
                         'milk_amount' => isset($timer['milk_amount']) ? (int)$timer['milk_amount'] : null
                     ];

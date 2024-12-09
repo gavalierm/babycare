@@ -16,50 +16,41 @@
     <main class="app-container">
         <!-- Stage Panel -->
         <section class="stage-panel">
-            <h1 class="stage-title" data-translate="app_title">Starostlivosť o bábätko</h1>
-            
             <!-- Type Selection -->
             <nav class="type-selector">
-                <div class="nav-item">
-                    <button class="nav-button" onclick="setActiveType('breastfeeding')">
-                        <i class="fas fa-baby"></i>
-                        <span data-translate="activities.breastfeeding">Dojčenie</span>
-                    </button>
+                <button class="nav-button type-sleep" onclick="setActiveType('sleep')">
+                    <i class="fas fa-moon"></i>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
                         <span class="time">--</span>
                     </small>
-                </div>
-                <div class="nav-item">
-                    <button class="nav-button" onclick="setActiveType('bottlefeeding')">
-                        <i class="fas fa-prescription-bottle"></i>
-                        <span data-translate="activities.bottlefeeding">Fľaška</span>
-                    </button>
+                    <span class="nav-label" data-translate="activities.sleep">Spánok</span>
+                </button>
+                <button class="nav-button type-breastfeeding" onclick="setActiveType('breastfeeding')">
+                    <i class="fas fa-baby"></i>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
                         <span class="time">--</span>
                     </small>
-                </div>
-                <div class="nav-item">
-                    <button class="nav-button" onclick="setActiveType('sleep')">
-                        <i class="fas fa-moon"></i>
-                        <span data-translate="activities.sleep">Spánok</span>
-                    </button>
+                    <span class="nav-label" data-translate="activities.breastfeeding">Dojčenie</span>
+                </button>
+                <button class="nav-button type-bottlefeeding" onclick="setActiveType('bottlefeeding')">
+                    <i class="fas fa-prescription-bottle"></i>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
                         <span class="time">--</span>
                     </small>
-                </div>
-                <div class="nav-item">
-                    <button class="nav-button" onclick="setActiveType('nappy')">
-                        <i class="fas fa-poo"></i>
-                        <span data-translate="activities.nappy">Plienka</span>
-                    </button>
+                    <span class="nav-label" data-translate="activities.bottlefeeding">Fľaška</span>
+                </button>
+
+                <button class="nav-button type-nappy" onclick="setActiveType('nappy')">
+                    <i class="fas fa-poo"></i>
                     <small class="last-activity">
                         <span class="label" data-translate="time.before">pred</span>
                         <span class="time">--</span>
                     </small>
-                </div>
+                    <span class="nav-label" data-translate="activities.nappy">Plienka</span>
+                </button>
             </nav>
 
             <!-- Controls Panel -->
@@ -77,8 +68,8 @@
                         </button>
                     </div>
                     <div class="active-timer">
-                        <span class="duration"></span>
                         <span class="time"></span>
+                        <span class="duration"></span>
                     </div>
                 </div>
 
@@ -103,9 +94,9 @@
                         </button>
                     </div>
                     <div class="active-timer">
-                        <span class="duration"></span>
-                        <span class="parameter"></span>
                         <span class="time"></span>
+                        <span class="parameter"></span>
+                        <span class="duration"></span>
                     </div>
                 </div>
 
@@ -122,8 +113,8 @@
                         </button>
                     </div>
                     <div class="active-timer">
-                        <span class="duration"></span>
                         <span class="time"></span>
+                        <span class="duration"></span>
                     </div>
                 </div>
 

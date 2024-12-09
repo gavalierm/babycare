@@ -149,10 +149,6 @@ function setActiveType(type) {
     
     document.body.className = `type-${type}`;
     
-    // Nastavíme nadpis podľa typu
-    const title = document.querySelector('.stage-title');
-    title.textContent = t('activities.' + type);
-    
     // Nastavíme active class pre nav button
     document.querySelectorAll('.nav-button').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('onclick').includes(type));
@@ -208,7 +204,7 @@ function setActiveType(type) {
 }
 
 function updateTimer() {
-    if (!startTime) return;
+    if (!startTime || !activeTask) return;
     
     let elapsed;
     if (pauseTime) {
@@ -218,31 +214,80 @@ function updateTimer() {
     }
     
     // Aktualizujeme len aktívny timer
-    const activeTimer = document.querySelector(`.type-controls.type-${activeTask} .active-timer`);
-    if (activeTimer) {
-        activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
-        activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed, true).value;
-        
-        // Parameter pre bottle feeding
+    const controls = document.querySelector(`.type-controls.type-${activeTask}`);
+    if (!controls) return;
+
+    const activeTimer = controls.querySelector('.active-timer');
+    if (!activeTimer) return;
+
+    const timeEl = activeTimer.querySelector('.time');
+    const durationEl = activeTimer.querySelector('.duration');
+    
+    if (timeEl) timeEl.textContent = formatTimeOnly(startTime);
+    if (durationEl) durationEl.textContent = formatRelativeTime(elapsed, true).value;
+    
+    // Parameter pre bottle feeding
+    if (activeTask === 'bottlefeeding') {
         const parameterEl = activeTimer.querySelector('.parameter');
-        if (activeTask === 'bottlefeeding' && parameterEl) {
-            const amount = document.querySelector(`.type-controls.type-${activeTask} .milk-amount`).value;
-            parameterEl.textContent = `${amount}ml`;
+        const milkAmountEl = controls.querySelector('.milk-amount');
+        if (parameterEl && milkAmountEl) {
+            parameterEl.textContent = `${milkAmountEl.value}ml`;
         }
     }
 }
 
 function updateActiveTaskDisplay() {
-    const activeTimer = document.querySelector('.active-timer');
-    
-    if (activeTask && startTime) {
-        const elapsed = new Date() - startTime - totalPausedTime;
-        activeTimer.querySelector('.time').textContent = formatTimeOnly(startTime);
-        activeTimer.querySelector('.duration').textContent = formatRelativeTime(elapsed).value;
-    } else {
-        activeTimer.querySelector('.time').textContent = '';
-        activeTimer.querySelector('.duration').textContent = '';
-    }
+    document.querySelectorAll('.type-controls').forEach(controls => {
+        if (!controls?.classList) return;
+
+        const typeClass = controls.classList[1];
+        if (!typeClass?.startsWith('type-')) return;
+        
+        const type = typeClass.replace('type-', '');
+        const activeTimer = controls.querySelector('.active-timer');
+        if (!activeTimer) return;
+        
+        const buttons = getControlButtons(type);
+        if (!buttons) return;
+        
+        // Reset stavu
+        controls.classList.remove('active-task');
+        activeTimer.classList.remove('show');
+        
+        if (buttons.startBtn) buttons.startBtn.style.display = 'block';
+        if (buttons.stopBtn) buttons.stopBtn.style.display = 'none';
+        if (buttons.pauseBtn) {
+            buttons.pauseBtn.style.display = 'none';
+            buttons.pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+        }
+
+        // Vyčistíme hodnoty ak nie je aktívna úloha
+        if (!activeTask) {
+            const timeEl = activeTimer.querySelector('.time');
+            const durationEl = activeTimer.querySelector('.duration');
+            const parameterEl = activeTimer.querySelector('.parameter');
+            
+            if (timeEl) timeEl.textContent = '';
+            if (durationEl) durationEl.textContent = '';
+            if (parameterEl) parameterEl.textContent = '';
+            return;
+        }
+
+        // Nastavíme aktívny stav
+        if (activeTask === type) {
+            controls.classList.add('active-task');
+            activeTimer.classList.add('show');
+            
+            if (buttons.startBtn) buttons.startBtn.style.display = 'none';
+            if (buttons.stopBtn) buttons.stopBtn.style.display = 'block';
+            if (buttons.pauseBtn) {
+                buttons.pauseBtn.style.display = 'block';
+                buttons.pauseBtn.innerHTML = pauseTime ? 
+                    '<i class="fas fa-play"></i>' : 
+                    '<i class="fas fa-pause"></i>';
+            }
+        }
+    });
 }
 
 // Pridám novú pomocnú funkciu pre relatívny čas
@@ -435,7 +480,7 @@ function validateMilkAmount() {
 }
 
 // Upravíme funkciu startTask
-async function startTask(type) {
+function startTask(type) {
     if (activeTask) return;
     
     if (type === 'bottlefeeding') {
@@ -445,50 +490,50 @@ async function startTask(type) {
             return;
         }
         input.classList.add('hidden');
+        input.disabled = true;
     }
     
+    // Okamžitá aktualizácia UI
     activeTask = type;
     startTime = new Date();
     totalPausedTime = 0;
     
-    const buttons = getControlButtons(type);
-    if (!buttons) return;
-
-    // Okamžite nastavíme active-task triedu
     const controls = document.querySelector(`.type-controls.type-${type}`);
     controls.classList.add('active-task');
-
-    // Nastavíme správnu ikonu pre pause tlačidlo (ikona play, keďže nie sme v pauze)
-    buttons.pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
     
-    // Okamžite spustíme timer
-    updateTimer();
-    timerInterval = setInterval(updateTimer, 1000);
-    
-    // Disable milk amount input počas aktivity
-    if (type === 'bottlefeeding') {
-        const input = document.querySelector('.type-bottlefeeding .milk-amount');
-        if (input) {
-            input.disabled = true;
+    const buttons = getControlButtons(type);
+    if (buttons) {
+        if (buttons.startBtn) buttons.startBtn.style.display = 'none';
+        if (buttons.stopBtn) buttons.stopBtn.style.display = 'block';
+        if (buttons.pauseBtn) {
+            buttons.pauseBtn.style.display = 'block';
+            buttons.pauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
         }
     }
     
-    // API volanie až na konci
-    await saveActiveTimer();
+    // Spustíme timer okamžite
+    updateTimer();
+    timerInterval = setInterval(updateTimer, 1000);
     
-    // Zobrazíme active-timer
+    // Zobrazíme active-timer okamžite
     const activeTimer = document.querySelector(`.type-controls.type-${type} .active-timer`);
     if (activeTimer) {
         activeTimer.classList.add('show');
     }
+    
+    // API volanie na pozadí bez čakania
+    saveActiveTimer().catch(error => {
+        console.error('Failed to save timer state:', error);
+    });
 }
 
-async function pauseTask() {
+function pauseTask() {
     if (!activeTask) return;
     
-    const buttons = getControlButtons(activeTask);  // Pridaný parameter activeTask
-    if (!buttons) return;  // Pridaná kontrola
+    const buttons = getControlButtons(activeTask);
+    if (!buttons?.pauseBtn) return;
     
+    // Okamžitá aktualizácia UI
     if (pauseTime) {
         totalPausedTime += new Date() - pauseTime;
         pauseTime = null;
@@ -498,19 +543,78 @@ async function pauseTask() {
         buttons.pauseBtn.innerHTML = '<i class="fas fa-play"></i>';
     }
     
-    await saveActiveTimer();
+    // API volanie na pozadí bez čakania
+    saveActiveTimer().catch(error => {
+        console.error('Failed to save timer state:', error);
+    });
 }
 
 // Upravíme funkciu stopTask
-async function stopTask() {
+function stopTask() {
     if (!activeTask) return;
     
     clearInterval(timerInterval);
     const endTime = new Date();
     const duration = endTime - startTime - totalPausedTime;
     
-    try {
-        await fetch('api.php?action=active-timer', {
+    // Pripravíme dáta pre API
+    const data = {
+        type: activeTask,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        duration: duration,
+        pausedTime: totalPausedTime
+    };
+
+    if (activeTask === 'bottlefeeding') {
+        const input = document.querySelector('.type-bottlefeeding .milk-amount');
+        if (input?.value) {
+            data.milkAmount = parseInt(input.value);
+        }
+    }
+
+    // Uložíme si typ pred resetom
+    const currentType = activeTask;
+
+    // Okamžitá aktualizácia UI
+    const controls = document.querySelector(`.type-controls.type-${currentType}`);
+    if (controls) {
+        controls.classList.remove('active-task');
+        
+        // Reset tlačidiel
+        const buttons = getControlButtons(currentType);
+        if (buttons) {
+            if (buttons.startBtn) buttons.startBtn.style.display = 'block';
+            if (buttons.stopBtn) buttons.stopBtn.style.display = 'none';
+            if (buttons.pauseBtn) buttons.pauseBtn.style.display = 'none';
+        }
+    }
+    
+    if (currentType === 'bottlefeeding') {
+        const input = document.querySelector('.type-bottlefeeding .milk-amount');
+        if (input) {
+            input.disabled = false;
+            input.value = '';
+            input.classList.remove('hidden');
+        }
+    }
+    
+    const activeTimer = document.querySelector(`.type-controls.type-${currentType} .active-timer`);
+    if (activeTimer) {
+        activeTimer.classList.remove('show');
+        activeTimer.querySelector('.time').textContent = '';
+        activeTimer.querySelector('.duration').textContent = '';
+    }
+    
+    // Reset globálnych premenných
+    activeTask = null;
+    startTime = null;
+    pauseTime = null;
+    totalPausedTime = 0;
+    
+    // API volania na pozadí bez čakania
+    Promise.all([
+        fetch('api.php?action=active-timer', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -519,67 +623,21 @@ async function stopTask() {
                 pauseTime: null,
                 totalPausedTime: 0
             })
-        });
-
-        const data = {
-            type: activeTask,
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            duration: duration,
-            pausedTime: totalPausedTime
-        };
-
-        // Pridáme množstvo mlieka pre bottle feeding
-        if (activeTask === 'bottlefeeding') {
-            const input = document.querySelector('.type-bottlefeeding .milk-amount');
-            if (input) {
-                const milkAmount = parseInt(input.value);
-                if (!isNaN(milkAmount) && milkAmount >= 30 && milkAmount <= 500) {
-                    data.milkAmount = milkAmount;
-                }
-            }
-        }
-
-        await fetch('api.php', {
+        }),
+        fetch('api.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
-        });
-        
-        // Odstránime active-task triedu
-        const controls = document.querySelector(`.type-controls.type-${activeTask}`);
-        if (controls) {
-            controls.classList.remove('active-task');
-        }
-        
-        // Reset milk amount input
-        if (activeTask === 'bottlefeeding') {
-            const input = document.querySelector('.type-bottlefeeding .milk-amount');
-            if (input) {
-                input.disabled = false;
-                input.value = '';
-                input.classList.remove('hidden');
-            }
-        }
-        
-        activeTask = null;
-        startTime = null;
-        pauseTime = null;
-        totalPausedTime = 0;
-        
-        await updateTimeline();
-        await updateLastActivities();
-    } catch (error) {
+        })
+    ])
+    .then(() => {
+        // Aktualizácie na pozadí
+        updateTimeline().catch(console.error);
+        updateLastActivities().catch(console.error);
+    })
+    .catch(error => {
         console.error('Failed to save activity:', error);
-    }
-    
-    // Skryjeme active-timer
-    const activeTimer = document.querySelector(`.type-controls.type-${activeTask} .active-timer`);
-    if (activeTimer) {
-        activeTimer.classList.remove('show');
-        activeTimer.querySelector('.time').textContent = '';
-        activeTimer.querySelector('.duration').textContent = '';
-    }
+    });
 }
 
 async function logNappy(type) {
@@ -628,8 +686,8 @@ async function saveActiveTimer() {
 
             // Pridáme milk_amount pre bottle feeding
             if (activeTask === 'bottlefeeding') {
-                const input = document.getElementById('milk-amount');
-                if (input.value) {
+                const input = document.querySelector('.type-bottlefeeding .milk-amount');
+                if (input?.value) {
                     data.milkAmount = parseInt(input.value);
                 }
             }
@@ -667,9 +725,9 @@ async function loadActiveTimer() {
             const buttons = getControlButtons(activeTask);
             if (!buttons) return;
             
-            buttons.pauseBtn.innerHTML = pauseTime ? 
-                '<i class="fas fa-pause"></i>' :
-                '<i class="fas fa-play"></i>';
+            buttons.pauseBtn.innerHTML = timer.pause_time ? 
+                '<i class="fas fa-play"></i>' : 
+                '<i class="fas fa-pause"></i>';
             
             // Pridáme nastavenie pre bottle feeding
             if (activeTask === 'bottlefeeding') {
@@ -785,8 +843,8 @@ function updateUITranslations() {
             element.placeholder = t(key);
         }
     });
-    
-    // Aktualizujeme title
+
+    // Nastavíme title dokumentu
     document.title = t('app_title');
 }
 
@@ -834,7 +892,7 @@ function showAddRecordModal(type) {
     const modal = document.getElementById('add-record-modal');
     delete modal.dataset.originalData;
     
-    modal.style.display = 'flex';
+    modal.classList.add('show');
     
     // Nastavíme text typu aktivity
     const typeText = modal.querySelector('.modal-type');
@@ -897,7 +955,7 @@ function showAddRecordModal(type) {
 
 function hideAddRecordModal() {
     const modal = document.getElementById('add-record-modal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
     editedItemId = null;
     
     // Odstránime data-original-data atribút
@@ -988,7 +1046,7 @@ async function saveRecord() {
         return result;  // Vrátime celý výsledok
     } catch (error) {
         console.error('Error saving record:', error);
-        alert('Nepodarilo sa uložiť záznam');
+        alert('Nepodarilo sa uložiť z��znam');
         throw error;  // Prehodíme chybu ďalej
     }
 }
@@ -1112,7 +1170,7 @@ async function openEditModal(id) {
         // Inicializujeme stav - odstránime form-dirty class
         document.body.classList.remove('form-dirty');
         
-        modal.style.display = 'flex';
+        modal.classList.add('show');
     } catch (error) {
         console.error('Error opening edit modal:', error);
         alert('Nepodarilo sa načítať údaje pre úpravu');
@@ -1173,3 +1231,40 @@ async function deleteRecord(id) {
         }
     }
 }
+
+// Upravíme funkciu pre kontrolu aktívneho časovača
+async function checkActiveTimer() {
+    try {
+        const response = await fetch('api.php?action=active-timer');
+        if (!response.ok) throw new Error('Failed to fetch active timer');
+        
+        const data = await response.json();
+        const timer = data.data;
+        
+        if (!timer || !timer.task_type) {
+            // Ak nie je aktívny časovač, resetujeme všetky hodnoty
+            activeTask = null;
+            startTime = null;
+            pauseTime = null;
+            totalPausedTime = 0;
+            updateActiveTaskDisplay();
+            return;
+        }
+        
+        // Aktualizujeme globálne premenné
+        activeTask = timer.task_type;
+        startTime = timer.start_time ? new Date(timer.start_time) : null;
+        pauseTime = timer.pause_time ? new Date(timer.pause_time) : null;
+        totalPausedTime = timer.total_paused_time || 0;
+        
+        // Aktualizujeme UI
+        updateActiveTaskDisplay();
+        updateTimer();
+        
+    } catch (error) {
+        console.error('Error checking active timer:', error);
+    }
+}
+
+// Zvýšime frekvenciu kontroly aktívneho časovača
+setInterval(checkActiveTimer, 1000);  // Kontrola každú sekundu namiesto 10 sekúnd

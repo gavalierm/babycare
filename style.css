@@ -7,13 +7,17 @@
 
 /* Variables */
 :root {
-    --color-breastfeeding: #5e5ce6;
-    --color-bottlefeeding: #00d8ff;
+    /* Background colors */
     --color-sleep: #0027ff;
+    --color-bottlefeeding: #5e5ce6;
+    --color-breastfeeding: #00d8ff;
     --color-nappy-pee: #FFD700;
     --color-nappy-poop: #8B4513;
     --color-pause: #ff9500;
     --color-play: #34c759;
+
+    /* Dimmed efekt */
+    --color-dimmed: rgba(255, 255, 255, 0.08);
 }
 
 /* Base styles */
@@ -43,86 +47,91 @@ body {
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Stage Title */
-.stage-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: 1rem;
-    transition: color 0.3s ease;
-    text-transform: capitalize;
-}
-
-/* Navigation */
+/* Navigation Grid */
 .type-selector {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin: 1rem;
 }
 
-.nav-item {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.3rem;
-}
-
+/* Navigation Button */
 .nav-button {
-    width: 100%;
-    min-height: 48px;
-    border: none;
-    background: rgba(255, 255, 255, 0.1);
-    cursor: pointer;
-    border-radius: 8px;
-    padding: 0.5rem;
+    overflow: hidden;
+    aspect-ratio: 1;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2rem;
-    color: #ffffff;
-    opacity: 0.8;
-    transition: all 0.2s ease;
-    -webkit-tap-highlight-color: transparent;
-    outline: none;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-content: space-between;
+    padding: 1.2rem;
+    border: none;
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    color: rgb(244, 244, 244);
+    background: var(--color-dimmed);
+}
+
+.nav-button.active{
+    color: white;
 }
 
 .nav-button i {
+    font-size: 2rem;
+}
+
+.nav-label {
+    width: 100%;
     font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-align: left;
 }
 
-.nav-button span {
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-/* Last Activity - základné štýly */
 .last-activity {
     display: flex;
-    justify-content: center;
-    gap: 0.3rem;
-    flex-wrap: wrap;
-    text-align: center;
-    align-items: baseline;
-}
-
-.nav-item .last-activity .label,
-.nav-item .last-activity .time {
-    flex: 1 0 100%;  /* Full width v column layoute */
-}
-
-.nav-item .last-activity .label {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    order: 1;
-}
-
-.nav-item .last-activity .time {
+    flex-direction: column;
     font-size: 1rem;
-    font-weight: 500;
-    opacity: 1;
-    order: 2;
+    text-align: right;
+}
+
+/* Active States */
+.nav-button.type-breastfeeding {
+    background: var(--color-dimmed);
+}
+
+.nav-button.type-bottlefeeding {
+    background: var(--color-dimmed);
+}
+
+.nav-button.type-sleep {
+    background: var(--color-dimmed);
+}
+
+.nav-button.type-nappy {
+    background: var(--color-dimmed);
+}
+
+/* Active States */
+.nav-button.type-breastfeeding.active {
+    background: var(--color-breastfeeding);
+    color: black
+}
+
+.nav-button.type-bottlefeeding.active {
+    background: var(--color-bottlefeeding);
+}
+
+.nav-button.type-sleep.active {
+    background: var(--color-sleep);    
+}
+
+.nav-button.type-nappy.active {
+    background: var(--color-nappy-pee);
+    color: black
 }
 
 /* Type Controls */
@@ -219,34 +228,6 @@ body {
 
 .type-controls.active-task .begin-btn {
     display: none;
-}
-
-/* Type-specific Colors */
-body.type-breastfeeding .stage-title { color: var(--color-breastfeeding); }
-body.type-bottlefeeding .stage-title { color: var(--color-bottlefeeding); }
-body.type-sleep .stage-title { color: var(--color-sleep); }
-body.type-nappy .stage-title { color: var(--color-nappy-pee); }
-
-body.type-breastfeeding .nav-button[onclick*="breastfeeding"] {
-    background: var(--color-breastfeeding);
-    opacity: 1;
-}
-
-body.type-bottlefeeding .nav-button[onclick*="bottlefeeding"] {
-    background: var(--color-bottlefeeding);
-    color: #000000;
-    opacity: 1;
-}
-
-body.type-sleep .nav-button[onclick*="sleep"] {
-    background: var(--color-sleep);
-    opacity: 1;
-}
-
-body.type-nappy .nav-button[onclick*="nappy"] {
-    background: var(--color-nappy-pee);
-    color: #000000;
-    opacity: 1;
 }
 
 /* Type-specific Controls */
@@ -435,29 +416,10 @@ body.type-sleep .type-controls.type-sleep .active-timer:has(.time:not(:empty)) {
 .timeline-item[data-type="nappy"][data-sub-type="pee"] i:first-child { color: var(--color-nappy-pee); }
 .timeline-item[data-type="nappy"][data-sub-type="poop"] i:first-child { color: var(--color-nappy-poop); }
 
-/* Navigation button states */
-.nav-button {
-    /* ... existujúce štýly ... */
-    opacity: 0.8;  /* Default opacity */
-}
-
-/* Active nav button */
-body.type-breastfeeding .nav-button[onclick*="breastfeeding"],
-body.type-bottlefeeding .nav-button[onclick*="bottlefeeding"],
-body.type-sleep .nav-button[onclick*="sleep"],
-body.type-nappy .nav-button[onclick*="nappy"] {
-    opacity: 1;
-}
-
-/* Nav buttons when timer is running */
-body:has(.type-controls.active-task) .nav-button {
-    opacity: 0.4;
-}
-
 /* Keep active nav button at opacity 1 when timer is running */
-body:has(.type-controls.active-task) .nav-button[onclick*="breastfeeding"].active,
-body:has(.type-controls.active-task) .nav-button[onclick*="bottlefeeding"].active,
-body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
+body:has(.type-controls.active-task) .active,
+body:has(.type-controls.active-task) .active,
+body:has(.type-controls.active-task) .active {
     opacity: 1;
 }
 
@@ -484,7 +446,6 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
 
 /* Modal */
 .modal {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
@@ -494,18 +455,22 @@ body:has(.type-controls.active-task) .nav-button[onclick*="sleep"].active {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     z-index: 1000;
-    align-items: flex-end;
-    cursor: pointer;
+    visibility: hidden;
+    transition: visibility 0.4s ease;
 }
 
 .modal-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -100vh;
     background: #2c2c2e;
     border-radius: 12px 12px 0 0;
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 1rem)) 1rem;
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    cursor: default;
+    transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modal-title {
@@ -769,13 +734,6 @@ input[type="time"] {
     outline: none;
 }
 
-/* Špecifické úpravy pre jednotlivé typy */
-.nav-button {
-    width: 100%;
-    min-height: 48px;
-    /* ... existujúce štýly ... */
-}
-
 .control-btn {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -820,4 +778,13 @@ input[type="time"] {
 body.form-dirty .modal-actions .control-btn[onclick="saveRecord()"] {
     opacity: 1;
     cursor: pointer;
+}
+
+/* Keď je modal zobrazený */
+.modal.show {
+    visibility: visible;
+}
+
+.modal.show .modal-content {
+    bottom: 0;
 }
